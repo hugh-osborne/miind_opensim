@@ -1,4 +1,7 @@
 #include <OpenSim/OpenSim.h>
+
+#include "Afferent/Millard12EqMuscleWithAfferents.h"
+
 using namespace SimTK;
 using namespace OpenSim;
 
@@ -79,7 +82,7 @@ int main() {
     ecr = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("ECRL");
     fcr = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("FCR");
 
-
+    Millard2012EquilibriumMuscle test = Millard12EqMuscleWithAfferents(*biceps_long);
 
 
     PrescribedController* brain = new PrescribedController();

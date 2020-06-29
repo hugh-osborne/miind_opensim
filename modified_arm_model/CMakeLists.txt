@@ -8,21 +8,21 @@ set(TARGET test CACHE TYPE STRING)
 set(OPENSIM_INSTALL_DIR $ENV{OPENSIM_HOME}
         CACHE PATH "Top-level directory of OpenSim install")
 
-# OpenSim uses C++11 language features.
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 # Find and hook up to OpenSim.
 # ----------------------------
 find_package(OpenSim REQUIRED PATHS "${OPENSIM_INSTALL_DIR}")
+find_package(Simbody REQUIRED PATHS "${SIMBODY_INSTALL_DIR}")
 
 # Configure this project.
 # -----------------------
+file(GLOB AFFERENT_SOURCE_FILES Afferent/*.h Afferent/*.cpp)
 file(GLOB SOURCE_FILES *.h *.cpp)
 
-add_executable(${TARGET} ${SOURCE_FILES})
+add_executable(${TARGET} ${AFFERENT_SOURCE_FILES} ${SOURCE_FILES})
 
-target_link_libraries(${TARGET} ${OpenSim_LIBRARIES})
+target_link_libraries(${TARGET} ${OpenSim_LIBRARIES} ${Simbody_LIBRARIES} osimCommon osimLepton)
 
 # This block copies the additional files into the running directory
 # For example vtp, obj files. Add to the end for more extentions
