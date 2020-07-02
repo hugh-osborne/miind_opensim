@@ -30,9 +30,6 @@ public:
 
 	Lin02GolgiTendonOrgan();  // the constructor
 	
-	/* Specify the name of the muscle that contains this object */
-	void setOwnerMuscleName(std::string OwnerMuscleName);
-	
 	//-------------------------------------------------------------------------
 	// GET & SET state variables and cache variables
 	//-------------------------------------------------------------------------

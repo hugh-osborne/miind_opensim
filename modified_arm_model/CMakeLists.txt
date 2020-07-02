@@ -18,7 +18,7 @@ find_package(Simbody REQUIRED PATHS "${SIMBODY_INSTALL_DIR}")
 # Configure this project.
 # -----------------------
 file(GLOB AFFERENT_SOURCE_FILES Afferent/*.h Afferent/*.cpp)
-file(GLOB SOURCE_FILES *.h *.cpp)
+file(GLOB SOURCE_FILES test_redux.cpp)
 
 add_executable(${TARGET} ${AFFERENT_SOURCE_FILES} ${SOURCE_FILES})
 

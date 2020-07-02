@@ -78,11 +78,6 @@ public:
 	void setDefaultActivation(double aDefaultActivation);
 	
 	//-------------------------------------------------------------------------
-	// SET owner muscle's name
-	//-------------------------------------------------------------------------
-	void setOwnerMuscleName(std::string OwnerMuscleName);
-	
-	//-------------------------------------------------------------------------
 	// Compute initial conditions
 	//-------------------------------------------------------------------------
 	/** This method is called from the owner muscle's
@@ -281,11 +276,6 @@ protected:
 private:
 
 	void constructProperties();
-	
-	/** The name of the muscle that owns the instance of this object.
-	 *  Initialized in the muscle's connectToModel method, or in its constructor.
-	 *  Checked in addToSystem. */
-	std::string ownerMuscleName;
 	
 	/** This pointer leads to the the owner muscle. 
 	 *  It can't be used to call non-const functions.

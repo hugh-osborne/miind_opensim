@@ -47,6 +47,7 @@ Mileusnic06Spindle::Mileusnic06Spindle()
 
 void Mileusnic06Spindle::extendAddToSystem(SimTK::MultibodySystem& system) const
 {
+	Super::extendAddToSystem(system);
 	// adding state variables 
 	addStateVariable(STATE_dynamic_activation_NAME);
 	addStateVariable(STATE_static_activation_NAME);
@@ -63,6 +64,8 @@ void Mileusnic06Spindle::extendAddToSystem(SimTK::MultibodySystem& system) const
 	
 	// ensuring that the owner muscle is in the system	
 	ForceSet& fSet = _model->updForceSet();
+
+	auto ownerMuscleName = traversePathToComponent<Muscle>(getAbsolutePath().getParentPath())->getName();
 	try {
 		fSet.get(ownerMuscleName);
 	}
@@ -80,11 +83,12 @@ void Mileusnic06Spindle::extendAddToSystem(SimTK::MultibodySystem& system) const
 		std::cout << "WARNING - In Mileusnic06Spindle::extendAddToSystem() \n";
 		std::cout << "Mileusnic06Spindle is owned by a force that is not " ;
 		std::cout << "of the Millard12EqMuscleWithAfferents class \n" ;
-	}		
+	}	
 }
 
 void Mileusnic06Spindle::extendInitStateFromProperties(SimTK::State& s) const
 {	
+	Super::extendInitStateFromProperties(s);
 	setDynamicActivation(s,getDefaultActivation());
 	setStaticActivation(s,getDefaultActivation());
 	
@@ -98,17 +102,18 @@ void Mileusnic06Spindle::extendInitStateFromProperties(SimTK::State& s) const
 }
 
 void Mileusnic06Spindle::extendSetPropertiesFromState(const SimTK::State& s)
-{
+{	
+	Super::extendSetPropertiesFromState(s);
 	setDefaultActivation(getDynamicActivation(s)); // ignoring static activation
 }
 
 void Mileusnic06Spindle::extendConnectToModel(Model& aModel) 
 {
-	// connectToModel is called several times, some of them before
-	// the owner muscle is in the model. We can only initialize
-	// musclePtr once the owner muscle is in the model.
-	if( (_model->getMuscles()).contains(ownerMuscleName) )
-		musclePtr = &((_model->getMuscles()).get(ownerMuscleName));
+	Super::extendConnectToModel(aModel);
+	
+	_model = &aModel;
+
+	musclePtr = traversePathToComponent<Muscle>(getAbsolutePath().getParentPath());
 }
 
 //--------------------------------------------------------------------------
@@ -186,26 +191,18 @@ void Mileusnic06Spindle::setTensionChainDeriv(SimTK::State& s,
 }
 // output variables
 double Mileusnic06Spindle::getIaOutput(const SimTK::State& s) const {
-	return 0.0;//getCacheVariableValue<double>(s, CACHE_primaryIa_NAME);
+	return getCacheVariableValue<double>(s, CACHE_primaryIa_NAME);
 }
 double& Mileusnic06Spindle::updIaOutput(const SimTK::State& s) const
 {
     return updCacheVariableValue<double>(s, CACHE_primaryIa_NAME);
 }
 double Mileusnic06Spindle::getIIOutput(const SimTK::State& s) const {
-	return 0.0;//getCacheVariableValue<double>(s, CACHE_secondaryII_NAME);
+	return getCacheVariableValue<double>(s, CACHE_secondaryII_NAME);
 }
 double& Mileusnic06Spindle::updIIOutput(const SimTK::State& s) const
 {
     return updCacheVariableValue<double>(s, CACHE_secondaryII_NAME);
-}
-
-//--------------------------------------------------------------------------
-// GET & SET owner muscle name
-//--------------------------------------------------------------------------
-void Mileusnic06Spindle::setOwnerMuscleName(std::string OwnerMuscleName)
-{
-	ownerMuscleName = OwnerMuscleName;
 }
 
 //=============================================================================
@@ -364,11 +361,11 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	// cache the output so it can be accessed
 	double& iaout = updIaOutput(s);
     iaout = primary;
-    //markCacheVariableValid(s,CACHE_primaryIa_NAME);
+    markCacheVariableValid(s,CACHE_primaryIa_NAME);
 
 	double& iiout = updIIOutput(s);
     iiout = secondary;
-    //markCacheVariableValid(s,CACHE_secondaryII_NAME);
+    markCacheVariableValid(s,CACHE_secondaryII_NAME);
 
 	setStateVariableDerivativeValue(s, STATE_dynamic_activation_NAME, derivs[0]);
 	setStateVariableDerivativeValue(s, STATE_static_activation_NAME, derivs[1]);

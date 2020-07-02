@@ -105,6 +105,7 @@ double& Lin02GolgiTendonOrgan::updGTOout(const SimTK::State& s) const
 
 void Lin02GolgiTendonOrgan::extendAddToSystem(SimTK::MultibodySystem& system) const
 {
+	Super::extendAddToSystem(system);
 	// adding state variables
 	addStateVariable(STATE_LPF_OUTPUT_NAME); // LPF output of Eq. 1
 	addStateVariable(STATE_LPF_DERIV_NAME);
@@ -116,6 +117,8 @@ void Lin02GolgiTendonOrgan::extendAddToSystem(SimTK::MultibodySystem& system) co
 	
 	// ensuring that the owner muscle is in the system	
 	ForceSet& fSet = _model->updForceSet();
+
+	auto ownerMuscleName = traversePathToComponent<Muscle>(getAbsolutePath().getParentPath())->getName();
 	try {
 		fSet.get(ownerMuscleName);
 	}
@@ -138,6 +141,7 @@ void Lin02GolgiTendonOrgan::extendAddToSystem(SimTK::MultibodySystem& system) co
 	
 void Lin02GolgiTendonOrgan::extendInitStateFromProperties(SimTK::State& s) const
 {
+	Super::extendInitStateFromProperties(s);
 	setX(s,0.0);
 	setXp(s,0.0);
 	setY(s, 0.0);
@@ -150,11 +154,11 @@ void Lin02GolgiTendonOrgan::extendInitStateFromProperties(SimTK::State& s) const
 
 void Lin02GolgiTendonOrgan::extendConnectToModel(Model& aModel) 
 {	
-	// connectToModel is called several times, some of them before
-	// the owner muscle is in the model. We can only initialize
-	// musclePtr once the owner muscle is in the model.
-	if( (_model->getMuscles()).contains(ownerMuscleName) )
-		musclePtr = &((_model->getMuscles()).get(ownerMuscleName));
+	Super::extendConnectToModel(aModel);
+
+	_model = &aModel;
+
+	musclePtr = traversePathToComponent<Muscle>(getAbsolutePath().getParentPath());
 }
 
 void Lin02GolgiTendonOrgan::constructProperties()
@@ -163,18 +167,12 @@ void Lin02GolgiTendonOrgan::constructProperties()
 	constructProperty_lpf_tau(0.01); // LPF time constant
 }
 
-void Lin02GolgiTendonOrgan::setOwnerMuscleName(std::string OwnerMuscleName)
-{
-	ownerMuscleName = OwnerMuscleName;
-}
-
 //=============================================================================
 // Derivative computation
 //=============================================================================
 void Lin02GolgiTendonOrgan::
 	computeStateVariableDerivatives(const SimTK::State& s) const
 {
-	Super::computeStateVariableDerivatives(s); //not sure if this is required...
 
 	// vector of the derivatives to be returned
 	SimTK::Vector derivs(getNumStateVariables(), SimTK::NaN);

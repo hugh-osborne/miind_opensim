@@ -352,8 +352,13 @@ record(const SimTK::State& s)
 		
 		// storing spindle variables
 		// first make sure cache variables are valid
-		_model->getMultibodySystem().realize(s,SimTK::Stage::Acceleration);
-		
+		if( !(dynamic_cast<Millard12EqMuscleWithAfferents*>
+		     (_muscleArray[i])->getSpindle()->isCacheVariableValid(s, "primaryIa")) ||
+			!(dynamic_cast<Millard12EqMuscleWithAfferents*>
+		     (_muscleArray[i])->getSpindle()->isCacheVariableValid(s, "secondaryII")) )
+		{
+			_model->getMultibodySystem().realize(s,SimTK::Stage::Acceleration);
+		}
 		stVars[0] = dynamic_cast<Millard12EqMuscleWithAfferents*>
                         (_muscleArray[i])->getSpindle()->getIaOutput(s);		
 		stVars[1] = dynamic_cast<Millard12EqMuscleWithAfferents*>
@@ -363,8 +368,11 @@ record(const SimTK::State& s)
 		memcpy(&spinVars[J],&stVars,NV*sizeof(double));
 		
 		// storing the output from the GTO
-		_model->getMultibodySystem().realize(s,SimTK::Stage::Acceleration);
-		
+		if( !(dynamic_cast<Millard12EqMuscleWithAfferents*>
+		     (_muscleArray[i])->getGTO()->isCacheVariableValid(s, "gto_out")) )
+		{
+			_model->getMultibodySystem().realize(s,SimTK::Stage::Acceleration);
+		}
 			
 		gtoOut = dynamic_cast<Millard12EqMuscleWithAfferents*>
                              (_muscleArray[i])->getGTO()->getGTOout(s);

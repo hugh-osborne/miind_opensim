@@ -5,20 +5,8 @@
 using namespace SimTK;
 using namespace OpenSim;
 
-Millard2012EquilibriumMuscle* biceps_long;
+Millard12EqMuscleWithAfferents* biceps_long;
 Constant* biceps_long_activation;
-
-Millard2012EquilibriumMuscle* triceps_med;
-Constant* triceps_med_activation;
-
-Millard2012EquilibriumMuscle* triceps_long;
-Constant* triceps_long_activation;
-
-Millard2012EquilibriumMuscle* ecr;
-Constant* ecr_activation;
-
-Millard2012EquilibriumMuscle* fcr;
-Constant* fcr_activation;
 
 StatesTrajectory my_simulate(const Model& model, const State& initState, double finalTime) {
     StatesTrajectory states;
@@ -34,18 +22,15 @@ StatesTrajectory my_simulate(const Model& model, const State& initState, double 
     std::cout << "Starting Simulation...\n";
 
     while (ts.getState().getTime() < finalTime) {
-        // std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(finalTime)) << "                  \r" << std::flush;
+        std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(finalTime)) << "                  \r" << std::flush;
         states.append(ts.getState());
 
         if(ts.getState().getTime() > 1.0){
             biceps_long_activation->setValue(0.4);
-            triceps_med_activation->setValue(0.1);
-            triceps_long_activation->setValue(0.1);
-        }
 
-        // std::cout << "Biceps Ia : " << biceps_long->getSpindle()->getIaOutput(ts.getState()) << "\n";
-        // std::cout << "Biceps Ib : " << biceps_long->getGTO()->getGTOout(ts.getState()) << "\n";
-        // std::cout << "Biceps II : " << biceps_long->getSpindle()->getIIOutput(ts.getState()) << "\n";
+            biceps_long->setStageForOutputs(model, ts.getState());
+            //std::cout << biceps_long->getGTO()->getGTOout(ts.getState()) << " activate!\n" << std::flush;
+        }
             
     }
     return states;
@@ -75,49 +60,34 @@ void setElbowExtensionPosture(Model& model){
 }
 
 int main() {
+    // Register Afferent Muscle Type so it can be read by the XML
+    Millard12EqMuscleWithAfferents test_object;
+    Object::registerType(test_object);
+    
+
     Model model("MoBL_ARMS_module2_4_allmuscles.osim");
     model.setUseVisualizer(true);
 
     setElbowExtensionPosture(model);
     
-    biceps_long = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("BIClong");
-    triceps_med = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("TRImed");
-    triceps_long = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("TRIlong");
-    ecr = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("ECRL");
-    fcr = (Millard2012EquilibriumMuscle*)&model.updMuscles().get("FCR");
+    biceps_long = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("BIClong");
+    biceps_long->setupAfferents();
+
+    ConsoleReporter* reporter = new ConsoleReporter();
+    reporter->set_report_time_interval(0.1);
+    reporter->addToReport(biceps_long->getSpindle()->getOutput("primary_Ia"));
+    reporter->addToReport(biceps_long->getSpindle()->getOutput("secondary_II"));
+    reporter->addToReport(biceps_long->getGTO()->getOutput("gto_out"));
+    model.addComponent(reporter);
     
-    // Replace the biceps EquilibriumMuscle with an EqMuscleWithAfferents
-    Millard12EqMuscleWithAfferents test = Millard12EqMuscleWithAfferents(*biceps_long);
-    // auto index = model.getMuscles().getIndex("BIClong");
-    // model.updMuscles().remove(index);
-    // model.updMuscles().insert(index, test);
-    // biceps_long = &test;
 
     PrescribedController* brain = new PrescribedController();
     brain->addActuator(*biceps_long);
-    brain->addActuator(*triceps_med);
-    brain->addActuator(*triceps_long);
-    brain->addActuator(*ecr);
-    brain->addActuator(*fcr);
-
-
-
 
 
     biceps_long_activation = new Constant(0.0);
     brain->prescribeControlForActuator("BIClong", biceps_long_activation);
 
-    triceps_med_activation = new Constant(0.0);
-    brain->prescribeControlForActuator("TRImed", triceps_med_activation);
-
-    triceps_long_activation = new Constant(0.0);
-    brain->prescribeControlForActuator("TRIlong", triceps_long_activation);
-
-    ecr_activation = new Constant(0.0);
-    brain->prescribeControlForActuator("ECRL", ecr_activation);
-
-    fcr_activation = new Constant(0.0);
-    brain->prescribeControlForActuator("FCR", fcr_activation);
 
     model.addController(brain);
 
@@ -131,7 +101,7 @@ int main() {
 
     model.equilibrateMuscles(state);
 
-    // Simulate.
+    // // Simulate.
     my_simulate(model, state, 10.0);
 
     return 0;

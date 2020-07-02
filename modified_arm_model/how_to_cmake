@@ -1,1 +1,2 @@
 cmake . -DCMAKE_INSTALL_PREFIX="~/opensim_install" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOPENSIM_DEPENDENCIES_DIR="~/opensim_dependencies_install"
+

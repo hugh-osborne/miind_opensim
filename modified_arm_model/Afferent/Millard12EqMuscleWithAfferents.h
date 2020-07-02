@@ -105,7 +105,20 @@ public:
 	//-------------------------------------------------------------------------
 	/** This function should override Actuator::numControls() */
 	int numControls() const {return 3;};
-	
+
+	void setupAfferents() {
+		addComponent(&spindle);
+		addComponent(&GTO);
+	}
+
+	void setStageForOutputs(const Model& aModel, const SimTK::State& s) {
+		if(!(getSpindle()->isCacheVariableValid(s, Mileusnic06Spindle::CACHE_primaryIa_NAME)) ||
+		!(getSpindle()->isCacheVariableValid(s, Mileusnic06Spindle::CACHE_secondaryII_NAME)) ||
+		!(getGTO()->isCacheVariableValid(s, Lin02GolgiTendonOrgan::CACHE_GTO_OUT_NAME)) )
+		{
+			aModel.getMultibodySystem().realize(s,SimTK::Stage::Acceleration);
+		}
+	}
 
 	/** This function allows to peek at the Mileusnic06Spindle object.
 	 *  Mostly for the sake of Analysis objects. */

@@ -27,13 +27,16 @@ const string Millard12EqMuscleWithAfferents::AFF_STATE_FIBER_LENGTH_NAME = "fibe
 // CONSTRUCTOR(S) AND DESTRUCTOR
 //=============================================================================
 /*
- * Default constructor. Not used.
+ * Default constructor.
  */
 Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents()
 {
 	constructProperties();
-	spindle.setOwnerMuscleName("no_spindle_name");
-	GTO.setOwnerMuscleName("no_GTO_name");
+
+	// Initialize the work variables to calculate the acceleration
+	vel = 0;
+	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
+	C0 = 0.0; C1 = 0.0;
 }
 
 /*
@@ -46,9 +49,6 @@ Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents(const std::string
           pennationAngle)
 {
 	constructProperties();
-	spindle.setOwnerMuscleName(getName());
-	GTO.setOwnerMuscleName(getName());
-	
 	// Initialize the work variables to calculate the acceleration
 	vel = 0;
 	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
@@ -60,8 +60,6 @@ Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents(const Millard2012
           muscle.getPennationAngleAtOptimalFiberLength())
 {
 	constructProperties();
-	spindle.setOwnerMuscleName(getName());
-	GTO.setOwnerMuscleName(getName());
 	
 	// Initialize the work variables to calculate the acceleration
 	vel = 0;
@@ -90,10 +88,6 @@ void Millard12EqMuscleWithAfferents::extendAddToSystem(SimTK::MultibodySystem& s
 	// low-pass filtered state variables used to calculate derivatives 
 	addStateVariable(STATE_LPF_VELOCITY_NAME); // fiber velocity
 	addStateVariable(STATE_LPF_ACCELERATION_NAME); // fiber acceleration
-
-	// Allowing the afferent elements to become part of the system
-	spindle.extendAddToSystem(system);
-	GTO.extendAddToSystem(system);
 }
 
 void Millard12EqMuscleWithAfferents::extendInitStateFromProperties(SimTK::State& s) const
@@ -103,10 +97,6 @@ void Millard12EqMuscleWithAfferents::extendInitStateFromProperties(SimTK::State&
 	// I'll init the state, but not from properties
 	setLPFvelocity(s, 0.0);
 	setLPFacceleration(s, 0.0);
-
-	spindle.extendInitStateFromProperties(s); // because spindle was not
-	                                    // declared a subcomponent
-	GTO.extendInitStateFromProperties(s);	    // ditto
 										
 	// Initialize the work variables to calculate the acceleration
 	vel = 0;
@@ -117,33 +107,11 @@ void Millard12EqMuscleWithAfferents::extendInitStateFromProperties(SimTK::State&
 void Millard12EqMuscleWithAfferents::extendSetPropertiesFromState(const SimTK::State& s)
 {
     Super::extendSetPropertiesFromState(s);
-	
-	spindle.extendSetPropertiesFromState(s); // because spindle was not
-	                                    // declared a subcomponent
-	GTO.extendSetPropertiesFromState(s); // ditto
 }
 
 void Millard12EqMuscleWithAfferents::extendConnectToModel(Model& aModel)
 {
 	Super::extendConnectToModel(aModel);
-	
-	// The afferents need the name of their owner muscle
-	spindle.setOwnerMuscleName(getName());
-	GTO.setOwnerMuscleName(getName());
-	
-	// I read in Ligament.cpp that includeAsSubComponent should 
-	// appear before Super::connectToModel() 
-	/// I REMOVED IT. For some reason the state variables of the spindle
-	/// object were not being added to the system despite this
-	/// statement.
-	/// includeAsSubComponent(&spindle);
-	
-	/// What allowed the state variables of spindle to be
-	/// connected was to invoke this here.
-	spindle.extendConnectToModel(aModel);
-	GTO.extendConnectToModel(aModel); // ditto for GTO
-	
-	
 }
 
 //--------------------------------------------------------------------------
@@ -182,13 +150,6 @@ computeInitialFiberEquilibrium(SimTK::State& s) const
 	setLPFvelocity(s, getFiberVelocity(s));
 	// a simplifying assumption is a steady state
 	setLPFacceleration(s, 0.0); 
-	
-	// the spindle's initial conditions depend on the muscle,
-	// so this method should be called last.
-	spindle.computeInitialSpindleEquilibrium(s);
-	
-	// get a reasonable initial value for the GTO nonlinearity
-	GTO.initFromMuscle(s);
 	
 	// update the work vectors assuming no acceleration
 	vel[0] = vel[1] = vel[2] = getFiberVelocity(s);
@@ -259,8 +220,7 @@ double Millard12EqMuscleWithAfferents::
 		ts(0) = ts(0) - curr_time;
 		ts(1) = ts(1) - curr_time;
 		ts(2) = ts(2) - curr_time;
-		
-		// calculate coefficients
+	// Super::extendAddToSystem(system);
 		C0(0,1) = ts(1)/(ts(1)-ts(0));
 		C0(1,1) = ts(0)/(ts(0)-ts(1));
 		C0(0,2) = ts(2)*C0(0,1)/(ts(2)-ts(0));
