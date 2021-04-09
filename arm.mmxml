@@ -1,0 +1,46 @@
+<Simulation>
+<WeightType>CustomConnectionParameters</WeightType>
+<Algorithms>
+<Algorithm type="MeshAlgorithmCustom" name="LIF" tau_refractive="0.002" modelfile="lif.model" >
+<TimeStep>0.0001</TimeStep>
+<MatrixFile>lif_0.1_0_0_0_.mat</MatrixFile>
+<MatrixFile>lif_-0.1_0_0_0_.mat</MatrixFile>
+</Algorithm>
+</Algorithms>
+<Nodes>
+  <Node algorithm="LIF" name="BIClongA" type="NEUTRAL" />
+  <Node algorithm="LIF" name="BIClongB" type="NEUTRAL" />
+  <Node algorithm="LIF" name="BIClongG" type="NEUTRAL" />
+
+  <Node algorithm="LIF" name="TRIlongA" type="NEUTRAL" />
+  <Node algorithm="LIF" name="TRIlongB" type="NEUTRAL" />
+  <Node algorithm="LIF" name="TRIlongG" type="NEUTRAL" />
+</Nodes>
+<Connections>
+  <IncomingConnection Node="BIClongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="BIClongA"/>
+  <IncomingConnection Node="BIClongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="BIClongB"/>
+  <IncomingConnection Node="BIClongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="BIClongG"/>
+
+  <IncomingConnection Node="TRIlongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="TRIlongA"/>
+  <IncomingConnection Node="TRIlongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="TRIlongB"/>
+  <IncomingConnection Node="TRIlongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+  <OutgoingConnection Node="TRIlongG"/>
+</Connections>
+<Reporting>
+	<Display node="BIClongA" />
+  <Display node="TRIlongA" />
+</Reporting>
+<SimulationRunParameter>
+<master_steps>10</master_steps>
+<max_iter>1000000</max_iter>
+<t_begin>0</t_begin>
+<t_end>10</t_end>
+<t_step>0.001</t_step>
+<name_log>miind.log</name_log>
+</SimulationRunParameter>
+</Simulation>
