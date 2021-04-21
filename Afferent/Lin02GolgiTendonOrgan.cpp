@@ -42,12 +42,18 @@ Lin02GolgiTendonOrgan::Lin02GolgiTendonOrgan()
 	constructProperties();
 	
 	// Set parameter values
-	Gg = 60;  	// pulses/s
-	Gf = 4;		// Newtons
+	Gg = 0.6;  	// pulses/s
+	Gf = 10;		// Newtons
 	thr = 0;	// pulses/s
 	// Initialize work variables
 	nl = 0; Dnl = 0; 
 	ts[4] = -0.004; ts[3] = -0.003; ts[2] = -0.002; ts[1] = -0.001; ts[0] = 0.0;
+
+	for (unsigned int i = 0; i < GTO_SMOOTHING_WINDOW; i++) {
+		nl_approx_xs[i] = 0.0;
+		nl_approx_ts[i] = 0.0;
+		dnl_approx_nls[i] = 0.0;
+	}
 }
 
 //=============================================================================
@@ -228,6 +234,12 @@ void Lin02GolgiTendonOrgan::initFromMuscle(SimTK::State& s) const
 	// the work variables too
 	nl = 0; Dnl = 0;
 	ts[4] = -0.004; ts[3] = -0.003; ts[2] = -0.002; ts[1] = -0.001; ts[0] = 0.0;
+
+	for (unsigned int i = 0; i < GTO_SMOOTHING_WINDOW; i++) {
+		nl_approx_xs[i] = nonLin;
+		nl_approx_ts[i] = 0.0;
+		dnl_approx_nls[i] = 0.0;
+	}
 }
 
 
@@ -237,7 +249,61 @@ void Lin02GolgiTendonOrgan::initFromMuscle(SimTK::State& s) const
 // HO : Originally calculateDerivs used a more sophisticated way to estimate the
 // derivatives but it doesn't play nice with a static time step which we need
 // for syncing with the neural simulation so we just use the less accurate, naive, but
-// faster solution just using the previous two values.
+// faster solution.
+//SimTK::Vec<2> Lin02GolgiTendonOrgan::
+//calculateDerivatives(const SimTK::State& s) const
+//{
+//	// three point formula
+//	double curr_nl = getX(s);
+//	double curr_Dnl = getXp(s);
+//	double curr_time = s.getTime();	// time in the simulation
+//	// diff(0) = LPF derivative of nonlinear output
+//	// diff(1) = derivative of diff(0)'s variable 
+//	SimTK::Vec<2> diff;
+//
+//	if (curr_time - ts(0) > 0.05) {
+//		if (ts(3) >= 0.0) {
+//			diff(0) = ((-2 * nl(2)) + (9 * nl(1)) - (18 * nl(0)) + (11 * curr_nl)) / (6 * (curr_time - ts(0)));
+//			diff(1) = ((-2 * Dnl(2)) + (9 * Dnl(1)) - (18 * Dnl(0)) + (11 * curr_Dnl)) / (6 * (curr_time - ts(0)));
+//		}
+//		else {
+//			diff(0) = 0.0;
+//			diff(1) = 0.0;
+//		}
+//
+//		ts(4) = ts(3); ts(3) = ts(2); ts(2) = ts(1); ts(1) = ts(0);
+//		ts(0) = curr_time;
+//
+//		nl(4) = nl(3); nl(3) = nl(2); nl(2) = nl(1); nl(1) = nl(0);
+//		nl(0) = curr_nl;
+//
+//		Dnl(4) = Dnl(3); Dnl(3) = Dnl(2); Dnl(2) = Dnl(1); Dnl(1) = Dnl(0);
+//		Dnl(0) = curr_Dnl;
+//	}
+//	else {
+//		diff(0) = 0.0;
+//		diff(1) = 0.0;
+//
+//		ts(4) = ts(3); ts(3) = ts(2); ts(2) = ts(1); ts(1) = ts(0);
+//		ts(0) = curr_time;
+//
+//		nl(4) = nl(3); nl(3) = nl(2); nl(2) = nl(1); nl(1) = nl(0);
+//		nl(0) = curr_nl;
+//
+//		Dnl(4) = Dnl(3); Dnl(3) = Dnl(2); Dnl(2) = Dnl(1); Dnl(1) = Dnl(0);
+//		Dnl(0) = curr_Dnl;
+//	}
+//
+//	return diff;
+//}
+
+//--------------------------------------------------------------------------
+// Approximate the derivatives required by Eq. 2
+//--------------------------------------------------------------------------
+// HO : Originally calculateDerivs used a more sophisticated way to estimate the
+// derivatives but it doesn't play nice with a static time step which we need
+// for syncing with the neural simulation so we just use the less accurate, naive, but
+// faster solution.
 SimTK::Vec<2> Lin02GolgiTendonOrgan::
 calculateDerivatives(const SimTK::State& s) const
 {
@@ -249,115 +315,66 @@ calculateDerivatives(const SimTK::State& s) const
 	// diff(1) = derivative of diff(0)'s variable 
 	SimTK::Vec<2> diff;
 
-	if (curr_time - ts(0) > 0.0) {
-		if (ts(3) >= 0.0) {
-			diff(0) = ((-2 * nl(2)) + (9 * nl(1)) - (18 * nl(0)) + (11 * curr_nl)) / (6 * (curr_time - ts(0)));
-			diff(1) = ((-2 * Dnl(2)) + (9 * Dnl(1)) - (18 * Dnl(0)) + (11 * curr_Dnl)) / (6 * (curr_time - ts(0)));
+	const unsigned int smooth_window = GTO_SMOOTHING_WINDOW;
+	double diff0s[GTO_SMOOTHING_WINDOW], diff1s[GTO_SMOOTHING_WINDOW];
+
+	for (unsigned int i = 0; i < smooth_window; i++) {
+		diff0s[i] = 0.0;
+		diff1s[i] = 0.0;
+	}
+		
+	if (nl_approx_ts[smooth_window - 2] - nl_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - nl_approx_ts(0) > 0.0) {
+			diff0s[0] = (curr_nl - nl_approx_xs(0)) / (curr_time - nl_approx_ts(0));
+			diff1s[0] = (curr_Dnl - dnl_approx_nls(0)) / (curr_time - nl_approx_ts(0));
+			diff[0] += diff0s[0];
+			diff[1] += diff1s[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				diff0s[i] = (nl_approx_xs(i - 1) - nl_approx_xs(i)) / (nl_approx_ts(i - 1) - nl_approx_ts(i));
+				diff1s[i] = (dnl_approx_nls(i - 1) - dnl_approx_nls(i)) / (nl_approx_ts(i - 1) - nl_approx_ts(i));
+				diff[0] += diff0s[i];
+				diff[1] += diff1s[i];
+			}
+
+			diff[0] /= (double)smooth_window;
+			diff[1] /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				nl_approx_ts[i] = nl_approx_ts[i - 1];
+				nl_approx_xs[i] = nl_approx_xs[i - 1];
+				dnl_approx_nls[i] = dnl_approx_nls[i - 1];
+			}
+			nl_approx_ts[0] = curr_time;
+			nl_approx_xs[0] = curr_nl;
+			dnl_approx_nls[0] = curr_Dnl;
 		}
 		else {
 			diff(0) = 0.0;
 			diff(1) = 0.0;
 		}
-
-		ts(4) = ts(3); ts(3) = ts(2); ts(2) = ts(1); ts(1) = ts(0);
-		ts(0) = curr_time;
-
-		nl(4) = nl(3); nl(3) = nl(2); nl(2) = nl(1); nl(1) = nl(0);
-		nl(0) = curr_nl;
-
-		Dnl(4) = Dnl(3); Dnl(3) = Dnl(2); Dnl(2) = Dnl(1); Dnl(1) = Dnl(0);
-		Dnl(0) = curr_Dnl;
 	}
 	else {
-		diff(0) = 0.0;
-		diff(1) = 0.0;
+		if (curr_time - nl_approx_ts(0) > 0.0) {
+			diff0s[0] = (curr_nl - nl_approx_xs(0)) / (curr_time - nl_approx_ts(0));
+			diff1s[0] = (curr_Dnl - dnl_approx_nls(0)) / (curr_time - nl_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				nl_approx_ts[i] = nl_approx_ts[i - 1];
+				nl_approx_xs[i] = nl_approx_xs[i - 1];
+				dnl_approx_nls[i] = dnl_approx_nls[i - 1];
+			}
+			nl_approx_ts[0] = curr_time;
+			nl_approx_xs[0] = curr_nl;
+			dnl_approx_nls[0] = curr_Dnl;
+
+			diff(0) = diff0s[0];
+			diff(1) = diff1s[0];
+		}
+		else {
+			diff(0) = 0.0;
+			diff(1) = 0.0;
+		}
 	}
 
 	return diff;
 }
-
-//SimTK::Vec<2> Lin02GolgiTendonOrgan::
-//calculateDerivatives(const SimTK::State& s) const
-//{
-//	SimTK::Vec<2> diff;
-//	// diff(0) = LPF derivative of nonlinear output
-//	// diff(1) = derivative of diff(0)'s variable 
-//
-//	double curr_nl = getX(s);
-//	double curr_Dnl = getXp(s);
-//	double curr_time = s.getTime();	// time in the simulation
-//
-//	if (curr_time > ts(2))
-//	{	// data vectors are not ahead of current time.
-//		// Using 4-point Fornberg's method.
-//		// The formula below assumes current time = 0
-//		ts(0) = ts(0) - curr_time;
-//		ts(1) = ts(1) - curr_time;
-//		ts(2) = ts(2) - curr_time;
-//
-//		// calculate coefficients
-//		C0(0, 1) = ts(1) / (ts(1) - ts(0));
-//		C0(1, 1) = ts(0) / (ts(0) - ts(1));
-//		C0(0, 2) = ts(2) * C0(0, 1) / (ts(2) - ts(0));
-//		C0(1, 2) = ts(2) * C0(1, 1) / (ts(2) - ts(1));
-//		C0(2, 2) = ts(1) * ts(0) / ((ts(2) - ts(0)) * (ts(2) - ts(1)));
-//		C1(0, 1) = 1 / (ts(0) - ts(1));
-//		C1(1, 1) = -C1(0, 1);
-//		C1(2, 2) = ((ts(1) - ts(0)) / ((ts(2) - ts(1)) * (ts(2) - ts(0))))
-//			* (C0(1, 1) - ts(1) * C1(1, 1));
-//		C1(0, 3) = C0(0, 2) / ts(0);
-//		C1(1, 3) = C0(1, 2) / ts(1);
-//		C1(2, 3) = C0(2, 2) / ts(2);
-//		C1(3, 3) = ((ts(1) - ts(2)) * (ts(2) - ts(0)) / (ts(0) * ts(1) * ts(2)))
-//			* (C0(2, 2) - ts(2) * C1(2, 2));
-//
-//		// use the coefficients
-//		double nolo = 0.925 * curr_nl + 0.075 * nl(2);
-//		diff(0) = C1(3, 3) * nolo + C1(2, 3) * nl(2) + C1(1, 3) * nl(1) + C1(0, 3) * nl(0);
-//		// using a simpler rule for the 2nd derivative
-//		double dino = (Dnl(1) + Dnl(2)) / 2;
-//		diff(1) = 2 * (curr_Dnl - dino) / (-(ts(1) + ts(2)));
-//
-//		// shift work vectors and times
-//		nl(0) = nl(1); nl(1) = nl(2); nl(2) = curr_nl;
-//		Dnl(0) = Dnl(1); Dnl(1) = Dnl(2); Dnl(2) = curr_Dnl;
-//		ts(0) = ts(1) + curr_time; // changing to absolute times
-//		ts(1) = ts(2) + curr_time;
-//		ts(2) = curr_time;
-//	}
-//	else  // computeStateVariableDerivatives was called before for a more advanced time
-//	{
-//		if (curr_time > ts(1))
-//		{  // nl(1) and nl(0) still useful.
-//			// Using a 3-point rule for differentiation
-//			diff(0) = (3.0 * curr_nl - 4.0 * nl(1) + nl(0)) / (curr_time - ts(0));
-//			double dino = (Dnl(0) + Dnl(1)) / 2;
-//			diff(1) = 2 * (curr_Dnl - dino) / (-(ts(0) + ts(1)));
-//
-//			// shift velocities and times
-//			nl(2) = curr_nl; Dnl(2) = curr_Dnl;
-//			ts(2) = curr_time;
-//		}
-//		else if (curr_time > ts(0))
-//		{ // We only have one value before current time.
-//			// Using a 2-point rule for differentiation
-//			diff(0) = (curr_nl - nl(0)) / (curr_time - ts(0));
-//			diff(1) = (curr_Dnl - Dnl(0)) / (curr_time - ts(0));
-//
-//			// shift velocities and times
-//			nl(2) = curr_nl; nl(1) = nl(0);
-//			Dnl(2) = curr_Dnl; Dnl(1) = Dnl(0);
-//			ts(2) = curr_time; ts(1) = ts(0); ts(0) = ts(1) - 1.0e-6;
-//		}
-//		else // we interpolate backwards
-//		{
-//			diff(0) = (nl(0) - curr_nl) / (ts(0) - curr_time);
-//			diff(1) = (Dnl(0) - curr_Dnl) / (ts(0) - curr_time);
-//
-//			nl(2) = curr_nl; nl(1) = nl(2); nl(0) = nl(1);
-//			Dnl(2) = curr_Dnl; Dnl(1) = Dnl(2); Dnl(0) = Dnl(1);
-//			ts(2) = curr_time; ts(1) = ts(2) - 1.0e-6; ts(0) = ts(1) - 1.0e-6;
-//		}
-//	}
-//	return diff;
-//}

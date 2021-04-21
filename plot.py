@@ -16,5 +16,5 @@ fig = plt.figure()
 for i in range(7):
     norm = np.linalg.norm(rows[i])
     plt.plot(rows[i] / norm)
-plt.legend(['Ia','II','Ib','Force','Length','Velocity','Acceleration'])
+plt.legend(['Ia','II','Ib','Force','Length','VelocityLPF','AccelerationLPF'])
 plt.show()

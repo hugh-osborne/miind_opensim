@@ -132,6 +132,9 @@ private:
 	 *  Since computeStateVariableDerivatives is const, mutable is needed. */
 	mutable SimTK::Vec<5> ts, nl, Dnl;
 
+#define GTO_SMOOTHING_WINDOW 10
+	mutable SimTK::Vec<GTO_SMOOTHING_WINDOW> nl_approx_xs, dnl_approx_nls, nl_approx_ts;
+
 }; // end of class Lin02GolgiTendonOrgan
 	
 } // end of namespace OpenSim

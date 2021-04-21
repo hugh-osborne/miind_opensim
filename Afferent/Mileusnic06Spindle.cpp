@@ -286,9 +286,8 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	// equation 6 needs some muscle information
 	double L0 = musclePtr->getOptimalFiberLength();
 	double L = musclePtr->getFiberLength(s)/L0;
-	double Lp = (musclePtr->getFiberVelocity(s))/L0;
-	double Lpp = ((Millard12EqMuscleWithAfferents*)musclePtr)->
-	             getLPFacceleration(s)/L0;
+	double Lp = (((Millard12EqMuscleWithAfferents*)musclePtr)->getLPFvelocity(s))/L0;
+	double Lpp = ((Millard12EqMuscleWithAfferents*)musclePtr)->getLPFacceleration(s)/L0;
 	double  C, term1, term2, T, Tp;	// auxiliary variables 
 	
 	// Tension 2nd derivative for bag1 
@@ -306,8 +305,8 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	 
 	// afferent potential for bag1 (equation 7)
 	double APbag1; 
-	//APbag1 = bag1.G * max( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) , 0.0);
-	APbag1 = bag1.G * ( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) );			
+	APbag1 = bag1.G * max( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) , 0.0);
+	//APbag1 = bag1.G * ( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) );			
 			
 	// Tension 2nd derivative for bag2 
 	C = (Lp>0.0) ? bag2.C_L : bag2.C_S;
@@ -414,7 +413,7 @@ computeInitialSpindleEquilibrium(SimTK::State& s) const
 	// normalized fiber length and velocity
 	double L0 = musclePtr->getOptimalFiberLength();
 	double L = musclePtr->getNormalizedFiberLength(s);
-	double Lp = (musclePtr->getFiberVelocity(s))/L0;
+	double Lp = (((Millard12EqMuscleWithAfferents*)musclePtr)->getLPFvelocity(s))/L0;
 	// clipping away large velocities 
 	Lp = (Lp>15.0)? 15.0 : (Lp<-15.0)? -15.0 : Lp;
 	

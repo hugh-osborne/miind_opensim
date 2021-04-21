@@ -6,6 +6,9 @@
 using namespace SimTK;
 using namespace OpenSim;
 
+bool skeletal_model_viz = true;
+double sim_length = 3.0;
+
 Millard12EqMuscleWithAfferents* biceps_long;
 Millard12EqMuscleWithAfferents* triceps_long;
 Millard12EqMuscleWithAfferents* triceps_med;
@@ -20,7 +23,9 @@ Millard12EqMuscleWithAfferents* pec_m_3;
 Millard12EqMuscleWithAfferents* lat_1;
 Millard12EqMuscleWithAfferents* lat_2;
 Millard12EqMuscleWithAfferents* lat_3;
+Constant* biceps_afferents[3]; // Ia, II, Ib
 Constant* biceps_long_activation[3];
+Constant* triceps_long_afferents[3];
 Constant* triceps_long_activation[3];
 Constant* triceps_med_activation;
 Constant* delt_ant_activation;
@@ -49,50 +54,64 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
     integrator.setProjectEveryStep(true);
     std::cout << "Starting Simulation...\n";
 
+    unsigned int update_vis_count = 1;
+    unsigned int update_vis_counter = 0;
+
     while (ts.getState().getTime() < finalTime) {
+        update_vis_counter++;
         std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(finalTime)) << "                  \r" << std::flush;
         states.append(ts.getState());
 
+        model.realizeReport(ts.getState());
+
         std::vector<double> input_rates;
 
-        if (ts.getState().getTime() > 0.1) {
-            if (ts.getState().getTime() > 0.8) {
-                input_rates.push_back(130000);
-                input_rates.push_back(80000);
-                input_rates.push_back(80000);
+        if (ts.getState().getTime() > 0.5) {
+            if (ts.getState().getTime() > 1.5) {
+                input_rates.push_back(0);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
 
-                input_rates.push_back(130000);
-                input_rates.push_back(80000);
-                input_rates.push_back(80000);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
             }
             else {
-                input_rates.push_back(130000);
-                input_rates.push_back(80000);
-                input_rates.push_back(80000);
+                input_rates.push_back(250000);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
 
-                input_rates.push_back(80000);
-                input_rates.push_back(80000);
-                input_rates.push_back(80000);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
+                input_rates.push_back(0);
             }
         }
         else {
             input_rates.push_back(100000);
-            input_rates.push_back(80000);
-            input_rates.push_back(80000);
+            input_rates.push_back(0);
+            input_rates.push_back(0);
 
             input_rates.push_back(100000);
-            input_rates.push_back(80000);
-            input_rates.push_back(80000);
+            input_rates.push_back(0);
+            input_rates.push_back(0);
         }
+
+        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*200);
 
         biceps_long_activation[0]->setValue(input_rates[0]);
         biceps_long_activation[1]->setValue(input_rates[1]);
         biceps_long_activation[2]->setValue(input_rates[2]);
 
+        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+
         triceps_long_activation[0]->setValue(input_rates[3]);
         triceps_long_activation[1]->setValue(input_rates[4]);
         triceps_long_activation[2]->setValue(input_rates[5]);
-            
+
+        if (update_vis_counter > update_vis_count && skeletal_model_viz) {
+            update_vis_counter = 0;
+            model.getVisualizer().show(ts.getState());
+        }   
     }
     return states;
 }
@@ -108,7 +127,7 @@ void setElbowExtensionPosture(Model& model){
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
-    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.298132); // 0.698132 = 40 degrees in radians
+    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.698132); // 0.698132 = 40 degrees in radians
 
     model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);
@@ -127,7 +146,7 @@ int main() {
     
 
     Model model("MoBL_ARMS_module2_4_onemuscle_afferent.osim");
-    model.setUseVisualizer(true);
+    model.setUseVisualizer(skeletal_model_viz);
 
     setElbowExtensionPosture(model);
     
@@ -174,7 +193,7 @@ int main() {
     lat_3->setupAfferents();
 
     ConsoleReporter* reporter = new ConsoleReporter();
-    reporter->set_report_time_interval(0.001);
+    reporter->set_report_time_interval(0.01);
     reporter->addToReport(biceps_long->getSpindle()->getOutput("primary_Ia"));
     reporter->addToReport(biceps_long->getSpindle()->getOutput("secondary_II"));
     reporter->addToReport(biceps_long->getGTO()->getOutput("gto_out"));
@@ -186,7 +205,7 @@ int main() {
     model.addComponent(reporter);
 
     TableReporter* table_reporter = new TableReporter();
-    table_reporter->set_report_time_interval(0.01);
+    table_reporter->set_report_time_interval(0.001);
     table_reporter->addToReport(biceps_long->getSpindle()->getOutput("primary_Ia"));
     table_reporter->addToReport(biceps_long->getSpindle()->getOutput("secondary_II"));
     table_reporter->addToReport(biceps_long->getGTO()->getOutput("gto_out"));
@@ -199,21 +218,25 @@ int main() {
     NeuralController* brain = new NeuralController("arm.mmxml");
     //brain->setActuators(model.updActuators());
     brain->addActuator(*biceps_long);
+    biceps_afferents[0] = new Constant(0.0); // Biceps Ia
     biceps_long_activation[0] = new Constant(0.0);
     biceps_long_activation[1] = new Constant(0.0);
     biceps_long_activation[2] = new Constant(0.0);
-    brain->prescribeInputForControl(0, biceps_long_activation[0]);
-    brain->prescribeInputForControl(1, biceps_long_activation[1]);
-    brain->prescribeInputForControl(2, biceps_long_activation[2]);
+    brain->prescribeInputForControl(0, biceps_afferents[0]);
+    brain->prescribeInputForControl(1, biceps_long_activation[0]);
+    brain->prescribeInputForControl(2, biceps_long_activation[1]);
+    brain->prescribeInputForControl(3, biceps_long_activation[2]);
     brain->prescribeControlForActuator("BIClong", "BIClongA_0", "BIClongB_0", "BICmedG_0");
 
     brain->addActuator(*triceps_long);
+    triceps_long_afferents[0] = new Constant(0.0); // Triceps Ia
     triceps_long_activation[0] = new Constant(0.0);
     triceps_long_activation[1] = new Constant(0.0);
     triceps_long_activation[2] = new Constant(0.0);
-    brain->prescribeInputForControl(3, triceps_long_activation[0]);
-    brain->prescribeInputForControl(4, triceps_long_activation[1]);
-    brain->prescribeInputForControl(5, triceps_long_activation[2]);
+    brain->prescribeInputForControl(4, triceps_long_afferents[0]);
+    brain->prescribeInputForControl(5, triceps_long_activation[0]);
+    brain->prescribeInputForControl(6, triceps_long_activation[1]);
+    brain->prescribeInputForControl(7, triceps_long_activation[2]);
     brain->prescribeControlForActuator("TRIlong", "TRIlongA_0", "TRIlongB_0", "TRImedG_0");
 
     /*triceps_long_activation = new Constant(0.0);
@@ -259,24 +282,26 @@ int main() {
 
     SimTK::State& state = model.initSystem();
 
-    // Configure the visualizer.
-    //model.updMatterSubsystem().setShowDefaultGeometry(true);
-    Visualizer& viz = model.updVisualizer().updSimbodyVisualizer();
-    viz.setBackgroundType(viz.SolidColor);
-    viz.setBackgroundColor(Black);
+
+    if (skeletal_model_viz) {
+        // Configure the visualizer.
+        //model.updMatterSubsystem().setShowDefaultGeometry(true);
+        Visualizer& viz = model.updVisualizer().updSimbodyVisualizer();
+        viz.setBackgroundType(viz.SolidColor);
+        viz.setBackgroundColor(Black);
+    }
 
     model.equilibrateMuscles(state);
 
     // // Simulate.
-    my_simulate(model, state, 5);
-    //simulate(model, state, 10.0);
+    my_simulate(model, state, sim_length);
 
     auto table = table_reporter->getTable();
 
     ofstream dataFile;
     dataFile.open("output.txt");
     for (int i = 0; i < table.getNumRows(); i++) {
-        for (int j = 0; j < 7; j++) { // Currently recording 7 metrics...
+        for (int j = 0; j < 7; j++) { // Currently recording 8 metrics...
             dataFile << table.getRowAtIndex(i).getAsVector()[j] << "," << std::flush;
         }
         dataFile << "\n" << std::flush;

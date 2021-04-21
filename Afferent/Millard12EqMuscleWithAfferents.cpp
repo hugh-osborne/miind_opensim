@@ -32,11 +32,6 @@ const string Millard12EqMuscleWithAfferents::AFF_STATE_FIBER_LENGTH_NAME = "fibe
 Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents()
 {
 	constructProperties();
-
-	// Initialize the work variables to calculate the acceleration
-	vel = 0;
-	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
-	C0 = 0.0; C1 = 0.0;
 }
 
 /*
@@ -49,10 +44,6 @@ Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents(const std::string
           pennationAngle)
 {
 	constructProperties();
-	// Initialize the work variables to calculate the acceleration
-	vel = 0;
-	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
-	C0 = 0.0; C1 = 0.0;
 }
 
 Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents(const Millard2012EquilibriumMuscle& muscle)
@@ -60,11 +51,6 @@ Millard12EqMuscleWithAfferents::Millard12EqMuscleWithAfferents(const Millard2012
           muscle.getPennationAngleAtOptimalFiberLength())
 {
 	constructProperties();
-	
-	// Initialize the work variables to calculate the acceleration
-	vel = 0;
-	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
-	C0 = 0.0; C1 = 0.0;
 }
 
 /*
@@ -76,6 +62,13 @@ void Millard12EqMuscleWithAfferents::constructProperties()
 {
 	setAuthors("Sergio Verduzco from code by Ajay Seth");
 	constructProperty_lpf_tau(0.001); // LPF time constant
+
+	for (unsigned int i = 0; i < SMOOTHING_WINDOW; i++) {
+		acc_approx_vels[i] = 0.0;
+		acc_approx_ts[i] = 0.0;
+		vel_approx_lens[i] = 0.0;
+		vel_approx_ts[i] = 0.0;
+	}
 }
 
 // Define new states and their derivatives in the underlying system
@@ -97,11 +90,6 @@ void Millard12EqMuscleWithAfferents::extendInitStateFromProperties(SimTK::State&
 	// I'll init the state, but not from properties
 	setLPFvelocity(s, 0.0);
 	setLPFacceleration(s, 0.0);
-										
-	// Initialize the work variables to calculate the acceleration
-	vel = 0;
-	ts[2] = 0.0; ts[1] = -0.01; ts[0] = -0.02; 
-	C0 = 0.0; C1 = 0.0;
 }
 
 void Millard12EqMuscleWithAfferents::extendSetPropertiesFromState(const SimTK::State& s)
@@ -150,11 +138,13 @@ computeInitialFiberEquilibrium(SimTK::State& s) const
 	setLPFvelocity(s, 0.0);
 	// a simplifying assumption is a steady state
 	setLPFacceleration(s, 0.0); 
-	
-	// update the work vectors assuming no acceleration
-	vel[0] = vel[1] = vel[2] = 0.0;
-	ts[2] = s.getTime();
-	ts[1] = ts[2] - 0.001; ts[0] = ts[1] - 0.001;
+
+	for (unsigned int i = 0; i < SMOOTHING_WINDOW; i++) {
+		acc_approx_vels[i] = 0.0;
+		acc_approx_ts[i] = 0.0;
+		vel_approx_lens[i] = getFiberLength(s);
+		vel_approx_ts[i] = 0.0;
+	}
 
 	GTO.initFromMuscle(s);
 }
@@ -191,7 +181,7 @@ void Millard12EqMuscleWithAfferents::computeStateVariableDerivatives(const SimTK
 	derivs[1] = getFiberVelocity(s);
 	
 	// next state is the LPF velocity
-	derivs[2] = (getFiberVelocity(s) - getLPFvelocity(s)) / getLPFtau();
+	derivs[2] = (approxFiberVelocity(s) - getLPFvelocity(s)) / getLPFtau();
 	 
 	// the LPF acceleration
 	derivs[3] = (approxFiberAcceleration(s) - getLPFacceleration(s)) / getLPFtau();
@@ -210,19 +200,115 @@ void Millard12EqMuscleWithAfferents::computeStateVariableDerivatives(const SimTK
 // for syncing with the neural simulation so we just use the less accurate, naive, but
 // faster solution just using the previous value.
 double Millard12EqMuscleWithAfferents::
+approxFiberVelocity(const SimTK::State& s) const
+{
+	double curr_time = s.getTime();
+	double curr_vel = getFiberLength(s);
+	const unsigned int smooth_window = SMOOTHING_WINDOW;
+	double v, vs[smooth_window];
+	v = 0.0;
+	for (unsigned int i = 0; i < smooth_window; i++)
+		vs[i] = 0.0;
+
+	if (vel_approx_ts[smooth_window - 2] - vel_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - vel_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - vel_approx_lens(0)) / (curr_time - vel_approx_ts(0));
+			v += vs[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				vs[i] = (vel_approx_lens(i - 1) - vel_approx_lens(i)) / (vel_approx_ts(i - 1) - vel_approx_ts(i));
+				v += vs[i];
+			}
+
+			v /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				vel_approx_ts[i] = vel_approx_ts[i - 1];
+				vel_approx_lens[i] = vel_approx_lens[i - 1];
+			}
+			vel_approx_ts[0] = curr_time;
+			vel_approx_lens[0] = curr_vel;
+		}
+		else {
+			v = 0.0;
+		}
+	}
+	else {
+		if (curr_time - vel_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - vel_approx_lens(0)) / (curr_time - vel_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				vel_approx_ts[i] = vel_approx_ts[i - 1];
+				vel_approx_lens[i] = vel_approx_lens[i - 1];
+			}
+			vel_approx_ts[0] = curr_time;
+			vel_approx_lens[0] = curr_vel;
+
+			v = vs[0];
+		}
+		else {
+			v = 0.0;
+		}
+	}
+
+	return v;
+}
+
+//--------------------------------------------------------------------------
+// Approximate the muscle fiber acceleration
+//--------------------------------------------------------------------------
+// HO : Originally approxFiberAcceleration used a more sophisticated way to estimate the
+// acceleration but it doesn't play nice with a static time step which we need
+// for syncing with the neural simulation so we just use the less accurate, naive, but
+// faster solution just using the previous value.
+double Millard12EqMuscleWithAfferents::
        approxFiberAcceleration(const SimTK::State& s) const
 {
 	double curr_time = s.getTime();
-	double curr_vel = getFiberVelocity(s);
-	double v;
+	double curr_vel = getLPFvelocity(s);
+	const unsigned int smooth_window = SMOOTHING_WINDOW;
+	double v, vs[smooth_window];
+	v = 0.0;
+	for (unsigned int i = 0; i < smooth_window; i++)
+		vs[i] = 0.0;
 
-	if (curr_time - ts(0) > 0.0) {
-		v = (curr_vel - vel(0)) / (curr_time - ts(0));
-		ts(0) = curr_time;
-		vel(0) = curr_vel;
+	if (acc_approx_ts[smooth_window - 2] - acc_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - acc_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - acc_approx_vels(0)) / (curr_time - acc_approx_ts(0));
+			v += vs[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				vs[i] = (acc_approx_vels(i - 1) - acc_approx_vels(i)) / (acc_approx_ts(i - 1) - acc_approx_ts(i));
+				v += vs[i];
+			}
+
+			v /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				acc_approx_ts[i] = acc_approx_ts[i - 1];
+				acc_approx_vels[i] = acc_approx_vels[i - 1];
+			}
+			acc_approx_ts[0] = curr_time;
+			acc_approx_vels[0] = curr_vel;
+		}
+		else {
+			v = 0.0;
+		}
 	}
 	else {
-		v = 0.0;
+		if (curr_time - acc_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - acc_approx_vels(0)) / (curr_time - acc_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				acc_approx_ts[i] = acc_approx_ts[i - 1];
+				acc_approx_vels[i] = acc_approx_vels[i - 1];
+			}
+			acc_approx_ts[0] = curr_time;
+			acc_approx_vels[0] = curr_vel;
+
+			v = vs[0];
+		}
+		else {
+			v = 0.0;
+		}
 	}
 
 	return v;
