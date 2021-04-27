@@ -45,20 +45,16 @@ namespace OpenSim {
 			inputs.push_back(get_InputFunctions()[i].calcValue(time));
 
 		// Run the simulation up to the current time so everthing's in sync
-		std::vector<double> outputs;
 		// Update MIIND and load the outputs into the functions
-		while (s.getTime() > sim->getCurrentSimTime()) {
-			outputs = sim->evolveSingleStep(inputs);
+		while (s.getTime() >= sim->getCurrentSimTime()) {
+			_outputs = sim->evolveSingleStep(inputs);
 		}
-
-		if (outputs.size() <= 0)
-			return;
 
 		for (int i = 0; i < getActuatorSet().getSize(); i++) {
 			SimTK::Vector actControls(3, 0.0);
-			actControls[0] = outputs[sim->getIndexOfOutputNode(alpha_mapping[i])] / 50.0;
-			actControls[1] = outputs[sim->getIndexOfOutputNode(beta_mapping[i])];
-			actControls[2] = outputs[sim->getIndexOfOutputNode(gamma_mapping[i])];
+			actControls[0] = _outputs[sim->getIndexOfOutputNode(alpha_mapping[i])] / 50.0;
+			actControls[1] = _outputs[sim->getIndexOfOutputNode(beta_mapping[i])];
+			actControls[2] = _outputs[sim->getIndexOfOutputNode(gamma_mapping[i])];
 			getActuatorSet()[i].addInControls(actControls, controls);
 		}
 	}

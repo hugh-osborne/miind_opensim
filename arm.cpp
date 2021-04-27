@@ -44,65 +44,67 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
     StatesTrajectory states;
     SimTK::RungeKutta3Integrator integrator(model.getSystem());
     integrator.setFixedStepSize(0.001);
-    integrator.setAccuracy(1e-006);
+    integrator.setAccuracy(1e-008);
     integrator.setAllowInterpolation(true);
     integrator.setProjectInterpolatedStates(true);
     SimTK::TimeStepper ts(model.getSystem(), integrator);
     ts.initialize(initState);
-    ts.setReportAllSignificantStates(true);
+    ts.setReportAllSignificantStates(false);
     integrator.setReturnEveryInternalStep(true);
-    integrator.setProjectEveryStep(true);
+    integrator.setProjectEveryStep(false);
     std::cout << "Starting Simulation...\n";
 
     unsigned int update_vis_count = 1;
     unsigned int update_vis_counter = 0;
 
-    while (ts.getState().getTime() < finalTime) {
+    double time = 0;
+
+    while (time < finalTime) {
+        time += 0.001;
         update_vis_counter++;
-        std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(finalTime)) << "                  \r" << std::flush;
+        std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(time)) << "                  \r" << std::flush;
         states.append(ts.getState());
 
         model.realizeReport(ts.getState());
 
         std::vector<double> input_rates;
 
-        if (ts.getState().getTime() > 0.5) {
-            if (ts.getState().getTime() > 1.5) {
+        if (time > 1.0) {
+            if (time > 1.6) {
+                input_rates.push_back(180000);
                 input_rates.push_back(0);
-                input_rates.push_back(0);
-                input_rates.push_back(0);
+                input_rates.push_back(250000);
 
+                input_rates.push_back(140000);
                 input_rates.push_back(0);
-                input_rates.push_back(0);
-                input_rates.push_back(0);
+                input_rates.push_back(250000);
             }
             else {
-                input_rates.push_back(250000);
+                input_rates.push_back(180000);
                 input_rates.push_back(0);
                 input_rates.push_back(0);
 
-                input_rates.push_back(0);
+                input_rates.push_back(100000);
                 input_rates.push_back(0);
                 input_rates.push_back(0);
             }
         }
-        else {
-            input_rates.push_back(100000);
-            input_rates.push_back(0);
-            input_rates.push_back(0);
 
-            input_rates.push_back(100000);
-            input_rates.push_back(0);
-            input_rates.push_back(0);
-        }
+        input_rates.push_back(140000);
+        input_rates.push_back(0);
+        input_rates.push_back(250000);
 
-        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        input_rates.push_back(140000);
+        input_rates.push_back(0);
+        input_rates.push_back(250000);
+
+        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*800);
 
         biceps_long_activation[0]->setValue(input_rates[0]);
         biceps_long_activation[1]->setValue(input_rates[1]);
         biceps_long_activation[2]->setValue(input_rates[2]);
 
-        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*800);
 
         triceps_long_activation[0]->setValue(input_rates[3]);
         triceps_long_activation[1]->setValue(input_rates[4]);
@@ -127,7 +129,7 @@ void setElbowExtensionPosture(Model& model){
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
-    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.698132); // 0.698132 = 40 degrees in radians
+    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.298132); // 0.698132 = 40 degrees in radians
 
     model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);

@@ -276,9 +276,9 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 
 	// The first derivative of the tension state variables
 	// comes from another set of state variables
-	derivs[2] = getTensionBag1Deriv(s);
-	derivs[3] = getTensionBag2Deriv(s);
-	derivs[4] = getTensionChainDeriv(s);
+	derivs[2] = std::isnan(getTensionBag1Deriv(s)) ? 0.0 : getTensionBag1Deriv(s);
+	derivs[3] = std::isnan(getTensionBag2Deriv(s)) ? 0.0 : getTensionBag2Deriv(s);
+	derivs[4] = std::isnan(getTensionChainDeriv(s)) ? 0.0 : getTensionChainDeriv(s);
 	
 	// Now let's compute the second derivative of the tension
 	// (Eq. 6), and also get the afferent potentials (Eqs. 7, 8)
@@ -305,8 +305,8 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	 
 	// afferent potential for bag1 (equation 7)
 	double APbag1; 
-	APbag1 = bag1.G * max( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) , 0.0);
-	//APbag1 = bag1.G * ( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) );			
+	//APbag1 = bag1.G * max( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) , 0.0);
+	APbag1 = bag1.G * ( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) );			
 			
 	// Tension 2nd derivative for bag2 
 	C = (Lp>0.0) ? bag2.C_L : bag2.C_S;
@@ -324,17 +324,17 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	// afferent potential for bag2 (equation 8 except G product)
 	double APbag2;
 	
-	APbag2 = bag2.X * (bag2.L_sec/bag2.L_0SR)
+	/*APbag2 = bag2.X * (bag2.L_sec/bag2.L_0SR)
 	                * max((T/bag2.K_SR) - (bag2.L_NSR - bag2.L_0SR), 0.0)
 		   + (1.0-bag2.X) * (bag2.L_sec/bag2.L_0PR)
-					* max(L - (T/bag2.K_SR) - bag2.L_0SR - bag2.L_NPR, 0.0); 
+					* max(L - (T/bag2.K_SR) - bag2.L_0SR - bag2.L_NPR, 0.0); */
 	
 
-	/*APbag2 = bag2.X * (bag2.L_sec/bag2.L_0SR)
+	APbag2 = bag2.X * (bag2.L_sec/bag2.L_0SR)
 	                * ((T/bag2.K_SR) - (bag2.L_NSR - bag2.L_0SR))
 		   + (1.0-bag2.X) * (bag2.L_sec/bag2.L_0PR)
 					* (L - (T/bag2.K_SR) - bag2.L_0SR - bag2.L_NPR); 
-			*/		
+					
 	// Tension 2nd derivative for the chain fiber
 	C = (Lp>0.0) ? chain.C_L : chain.C_S;
 	T = getTensionChain(s);
@@ -351,21 +351,21 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	// afferent potential for chain (equation 8 except G product)
 	double APchain;
 	
-	APchain = chain.X * (chain.L_sec/chain.L_0SR)
+	/*APchain = chain.X * (chain.L_sec/chain.L_0SR)
 	                  * max((T/chain.K_SR) - (chain.L_NSR - chain.L_0SR), 0.0)
 		    + (1.0-chain.X) * (chain.L_sec/chain.L_0PR)
-					  * max(L - (T/chain.K_SR) - chain.L_0SR - chain.L_NPR, 0.0);
+					  * max(L - (T/chain.K_SR) - chain.L_0SR - chain.L_NPR, 0.0);*/
 	
-	/*APchain = chain.X * (chain.L_sec/chain.L_0SR)
+	APchain = chain.X * (chain.L_sec/chain.L_0SR)
 	                  * ((T/chain.K_SR) - (chain.L_NSR - chain.L_0SR))
 		    + (1.0-chain.X) * (chain.L_sec/chain.L_0PR)
 					  * (L - (T/chain.K_SR) - chain.L_0SR - chain.L_NPR);
-			*/		  
+			  
 	// calculating the afferent firing
 	double primary, secondary, pri_stat;
 	pri_stat = bag2.G_pri*APbag2 + chain.G_pri*APchain;
-	primary = max(APbag1, pri_stat) + S * min(APbag1, pri_stat);
-	secondary = bag2.G_sec*APbag2 + chain.G_sec*APchain;
+	primary = max(max(APbag1, pri_stat) + S * min(APbag1, pri_stat), 0.0);
+	secondary = max(bag2.G_sec*APbag2 + chain.G_sec*APchain, 0.0);
 	
 	// cache the output so it can be accessed
 	double& iaout = updIaOutput(s);

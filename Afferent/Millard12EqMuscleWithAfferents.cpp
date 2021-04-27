@@ -146,6 +146,7 @@ computeInitialFiberEquilibrium(SimTK::State& s) const
 		vel_approx_ts[i] = 0.0;
 	}
 
+	spindle.computeInitialSpindleEquilibrium(s);
 	GTO.initFromMuscle(s);
 }
 

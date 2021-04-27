@@ -50,6 +50,8 @@ namespace OpenSim {
 		std::vector<std::string> alpha_mapping;
 		std::vector<std::string> beta_mapping;
 		std::vector<std::string> gamma_mapping;
+
+		mutable std::vector<double> _outputs;
 	};
 }
 #endif

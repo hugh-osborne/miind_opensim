@@ -21,16 +21,16 @@
   </Nodes>
   <Connections>
     <IncomingConnection Node="BIClongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
-    <Connection In="BIClongIAInt" Out="BIClongA" num_connections="10" efficacy="-0.1" delay="0.0"/>
+    <Connection In="TRIlongIAInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
     <IncomingConnection Node="BIClongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongA"/>
     <IncomingConnection Node="BIClongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongB"/>
     <IncomingConnection Node="BIClongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongG"/>
-
+    
     <IncomingConnection Node="TRIlongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
-    <Connection In="TRIlongIAInt" Out="TRIlongA" num_connections="10" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongIAInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
     <IncomingConnection Node="TRIlongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="TRIlongA"/>
     <IncomingConnection Node="TRIlongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
@@ -40,7 +40,6 @@
   </Connections>
   <Reporting>
     <Display node="BIClongA" />
-    <Display node="BIClongIAInt" />
     <Display node="TRIlongA" />
   </Reporting>
   <SimulationRunParameter>
