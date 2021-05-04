@@ -284,6 +284,15 @@ private:
 	 *  It can't be used to call non-const functions.
 	 *  Initialized in Mileusnic06Spindle::connectToModel */
 	const Muscle *musclePtr;
+
+	double smoothBag1SecondDeriv(const SimTK::State& s, double curr_val) const;
+	double smoothBag2SecondDeriv(const SimTK::State& s, double curr_val) const;
+	double smoothChainSecondDeriv(const SimTK::State& s, double curr_val) const;
+
+#define SPINDLE_SMOOTHING_WINDOW 50
+	mutable SimTK::Vec<SPINDLE_SMOOTHING_WINDOW> bag1_approx_lens, bag1_approx_ts;
+	mutable SimTK::Vec<SPINDLE_SMOOTHING_WINDOW> bag2_approx_lens, bag2_approx_ts;
+	mutable SimTK::Vec<SPINDLE_SMOOTHING_WINDOW> chain_approx_lens, chain_approx_ts;
 	
 	/** This is a utility function to get the sign of its argument.
 	 *  Returns 1 if positive, -1 if negative, 0 otherwise. */

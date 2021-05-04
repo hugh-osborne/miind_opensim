@@ -7,7 +7,8 @@ using namespace SimTK;
 using namespace OpenSim;
 
 bool skeletal_model_viz = true;
-double sim_length = 3.0;
+double sim_length = 1.0;
+double timestep = 0.0002;
 
 Millard12EqMuscleWithAfferents* biceps_long;
 Millard12EqMuscleWithAfferents* triceps_long;
@@ -43,8 +44,8 @@ Constant* lat_3_activation;
 StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, double finalTime) {
     StatesTrajectory states;
     SimTK::RungeKutta3Integrator integrator(model.getSystem());
-    integrator.setFixedStepSize(0.001);
-    integrator.setAccuracy(1e-008);
+    integrator.setFixedStepSize(timestep);
+    integrator.setAccuracy(1e-003);
     integrator.setAllowInterpolation(true);
     integrator.setProjectInterpolatedStates(true);
     SimTK::TimeStepper ts(model.getSystem(), integrator);
@@ -60,7 +61,7 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
     double time = 0;
 
     while (time < finalTime) {
-        time += 0.001;
+        time += timestep;
         update_vis_counter++;
         std::cout << "(" << ts.getState().getTime() << ") " << integrator.getSuccessfulStepStatusString(ts.stepTo(time)) << "                  \r" << std::flush;
         states.append(ts.getState());
@@ -69,42 +70,25 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
 
         std::vector<double> input_rates;
 
-        if (time > 1.0) {
-            if (time > 1.6) {
-                input_rates.push_back(180000);
-                input_rates.push_back(0);
-                input_rates.push_back(250000);
-
-                input_rates.push_back(140000);
-                input_rates.push_back(0);
-                input_rates.push_back(250000);
-            }
-            else {
-                input_rates.push_back(180000);
-                input_rates.push_back(0);
-                input_rates.push_back(0);
-
-                input_rates.push_back(100000);
-                input_rates.push_back(0);
-                input_rates.push_back(0);
-            }
-        }
-
-        input_rates.push_back(140000);
+        input_rates.push_back(100000 + (biceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
         input_rates.push_back(0);
-        input_rates.push_back(250000);
+        input_rates.push_back(100000);
 
-        input_rates.push_back(140000);
-        input_rates.push_back(0);
-        input_rates.push_back(250000);
+        input_rates.push_back(100000 + (triceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
+        input_rates.push_back(0); 
+        input_rates.push_back(100000);
 
-        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*800);
+        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        biceps_afferents[1]->setValue(biceps_long->getGTO()->getGTOout(ts.getState())*0);
+        biceps_afferents[2]->setValue(biceps_long->getSpindle()->getIIOutput(ts.getState())*0);
 
         biceps_long_activation[0]->setValue(input_rates[0]);
         biceps_long_activation[1]->setValue(input_rates[1]);
         biceps_long_activation[2]->setValue(input_rates[2]);
 
-        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*800);
+        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        triceps_long_afferents[1]->setValue(triceps_long->getGTO()->getGTOout(ts.getState())*0);
+        triceps_long_afferents[2]->setValue(triceps_long->getSpindle()->getIIOutput(ts.getState())*0);
 
         triceps_long_activation[0]->setValue(input_rates[3]);
         triceps_long_activation[1]->setValue(input_rates[4]);
@@ -129,7 +113,7 @@ void setElbowExtensionPosture(Model& model){
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
-    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.298132); // 0.698132 = 40 degrees in radians
+    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.998132); // 0.698132 = 40 degrees in radians
 
     model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);
@@ -147,7 +131,8 @@ int main() {
     Object::registerType(Millard12EqMuscleWithAfferents());
     
 
-    Model model("MoBL_ARMS_module2_4_onemuscle_afferent.osim");
+   // Model model("MoBL_ARMS_module2_4_onemuscle_afferent.osim");
+    Model model("MoBL_ARMS_module2_4_bictri_afferent.osim");
     model.setUseVisualizer(skeletal_model_viz);
 
     setElbowExtensionPosture(model);
@@ -158,7 +143,7 @@ int main() {
     triceps_long = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("TRIlong");
     triceps_long->setupAfferents();
 
-    triceps_med = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("TRImed");
+    /*triceps_med = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("TRImed");
     triceps_med->setupAfferents();
 
     delt_ant = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("DELT1");
@@ -192,7 +177,7 @@ int main() {
     lat_2->setupAfferents();
 
     lat_3 = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("LAT3");
-    lat_3->setupAfferents();
+    lat_3->setupAfferents();*/
 
     ConsoleReporter* reporter = new ConsoleReporter();
     reporter->set_report_time_interval(0.01);
@@ -221,25 +206,33 @@ int main() {
     //brain->setActuators(model.updActuators());
     brain->addActuator(*biceps_long);
     biceps_afferents[0] = new Constant(0.0); // Biceps Ia
+    biceps_afferents[1] = new Constant(0.0); // Biceps Ib
+    biceps_afferents[2] = new Constant(0.0); // Biceps II
     biceps_long_activation[0] = new Constant(0.0);
     biceps_long_activation[1] = new Constant(0.0);
     biceps_long_activation[2] = new Constant(0.0);
     brain->prescribeInputForControl(0, biceps_afferents[0]);
-    brain->prescribeInputForControl(1, biceps_long_activation[0]);
-    brain->prescribeInputForControl(2, biceps_long_activation[1]);
-    brain->prescribeInputForControl(3, biceps_long_activation[2]);
-    brain->prescribeControlForActuator("BIClong", "BIClongA_0", "BIClongB_0", "BICmedG_0");
+    brain->prescribeInputForControl(1, biceps_afferents[1]);
+    brain->prescribeInputForControl(2, biceps_afferents[2]);
+    brain->prescribeInputForControl(3, biceps_long_activation[0]);
+    brain->prescribeInputForControl(4, biceps_long_activation[1]);
+    brain->prescribeInputForControl(5, biceps_long_activation[2]);
+    brain->prescribeControlForActuator("BIClong", "BIClongA_0", "BIClongB_0", "BIClongG_0");
 
     brain->addActuator(*triceps_long);
     triceps_long_afferents[0] = new Constant(0.0); // Triceps Ia
+    triceps_long_afferents[1] = new Constant(0.0); // Triceps Ib
+    triceps_long_afferents[2] = new Constant(0.0); // Triceps II
     triceps_long_activation[0] = new Constant(0.0);
     triceps_long_activation[1] = new Constant(0.0);
     triceps_long_activation[2] = new Constant(0.0);
-    brain->prescribeInputForControl(4, triceps_long_afferents[0]);
-    brain->prescribeInputForControl(5, triceps_long_activation[0]);
-    brain->prescribeInputForControl(6, triceps_long_activation[1]);
-    brain->prescribeInputForControl(7, triceps_long_activation[2]);
-    brain->prescribeControlForActuator("TRIlong", "TRIlongA_0", "TRIlongB_0", "TRImedG_0");
+    brain->prescribeInputForControl(6, triceps_long_afferents[0]);
+    brain->prescribeInputForControl(7, triceps_long_afferents[1]);
+    brain->prescribeInputForControl(8, triceps_long_afferents[2]);
+    brain->prescribeInputForControl(9, triceps_long_activation[0]);
+    brain->prescribeInputForControl(10, triceps_long_activation[1]);
+    brain->prescribeInputForControl(11, triceps_long_activation[2]);
+    brain->prescribeControlForActuator("TRIlong", "TRIlongA_0", "TRIlongB_0", "TRIlongG_0");
 
     /*triceps_long_activation = new Constant(0.0);
     brain->prescribeControlForActuator("TRIlong", triceps_long_activation);

@@ -8,29 +8,50 @@
     </Algorithm>
   </Algorithms>
   <Nodes>
-
-    <Node algorithm="LIF" name="BIClongIAInt" type="NEUTRAL" />
+    <Node algorithm="LIF" name="BIClongIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="BIClongIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="BIClongIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="BIClongRenshaw" type="INHIBITORY" />
     <Node algorithm="LIF" name="BIClongA" type="NEUTRAL" />
     <Node algorithm="LIF" name="BIClongB" type="NEUTRAL" />
     <Node algorithm="LIF" name="BIClongG" type="NEUTRAL" />
 
-    <Node algorithm="LIF" name="TRIlongIAInt" type="NEUTRAL" />
+    <Node algorithm="LIF" name="TRIlongIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="TRIlongIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="TRIlongIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="TRIlongRenshaw" type="INHIBITORY" />
     <Node algorithm="LIF" name="TRIlongA" type="NEUTRAL" />
     <Node algorithm="LIF" name="TRIlongB" type="NEUTRAL" />
     <Node algorithm="LIF" name="TRIlongG" type="NEUTRAL" />
   </Nodes>
   <Connections>
     <IncomingConnection Node="BIClongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
-    <Connection In="TRIlongIAInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <IncomingConnection Node="BIClongIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="BIClongIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <IncomingConnection Node="BIClongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongA"/>
     <IncomingConnection Node="BIClongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongB"/>
     <IncomingConnection Node="BIClongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongG"/>
+
+    <!--<Connection In="BIClongIIInt" Out="BIClongA" num_connections="50" efficacy="0.1" delay="0.0"/>
+    <Connection In="TRIlongIIInt" Out="TRIlongA" num_connections="50" efficacy="0.1" delay="0.0"/>-->
+
+    <!--<Connection In="BIClongIBInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="TRIlongIBInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
     
-    <IncomingConnection Node="TRIlongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <!--<Connection In="TRIlongIAInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="TRIlongIAInt" Out="BIClongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>
     <Connection In="BIClongIAInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongIAInt" Out="TRIlongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
+
+    <!--<Connection In="TRIlongRenshaw" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongRenshaw" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
+
+    <IncomingConnection Node="TRIlongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="TRIlongIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="TRIlongIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <IncomingConnection Node="TRIlongA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="TRIlongA"/>
     <IncomingConnection Node="TRIlongB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
@@ -47,7 +68,7 @@
     <max_iter>1000000</max_iter>
     <t_begin>0</t_begin>
     <t_end>10</t_end>
-    <t_step>0.001</t_step>
+    <t_step>0.0002</t_step>
     <name_log>miind.log</name_log>
   </SimulationRunParameter>
 </Simulation>

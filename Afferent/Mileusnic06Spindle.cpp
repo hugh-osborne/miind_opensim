@@ -39,6 +39,15 @@ Mileusnic06Spindle::Mileusnic06Spindle()
 
 	// one parameter value that I didn't set anywhere else
 	S = 0.156;
+
+	for (unsigned int i = 0; i < SPINDLE_SMOOTHING_WINDOW; i++) {
+		bag1_approx_lens[i] = 0.0;
+		bag1_approx_ts[i] = 0.0;
+		bag2_approx_lens[i] = 0.0;
+		bag2_approx_ts[i] = 0.0;
+		chain_approx_lens[i] = 0.0;
+		chain_approx_ts[i] = 0.0;
+	}
 }
 
 //=============================================================================
@@ -300,9 +309,11 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 		  * (L - bag1.L_0SR - (T/bag1.K_SR) - bag1.R);
 	term2 = bag1.K_PR*(L - bag1.L_0SR - (T/bag1.K_SR) - bag1.L_0PR);
 	
-	derivs[5] = (bag1.K_SR/bag1.M) * ( term1 + term2 
-	          + bag1.M*Lpp + Gamma_bag1 - T );
-	 
+	double val = (bag1.K_SR / bag1.M) * (term1 + term2
+		+ bag1.M * Lpp + Gamma_bag1 - T);
+
+	derivs[5] = val;//smoothBag1SecondDeriv(s, val) * 0.001;
+
 	// afferent potential for bag1 (equation 7)
 	double APbag1; 
 	//APbag1 = bag1.G * max( (T/bag1.K_SR) - (bag1.L_NSR - bag1.L_0SR) , 0.0);
@@ -317,9 +328,11 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 		  * std::pow(std::abs(Lp - (Tp/bag2.K_SR)), bag2.a)
 		  * (L - bag2.L_0SR - (T/bag2.K_SR) - bag2.R);
 	term2 = bag2.K_PR*(L - bag2.L_0SR - (T/bag2.K_SR) - bag2.L_0PR);
+
+	val = (bag2.K_SR / bag2.M) * (term1 + term2
+		+ bag2.M * Lpp + Gamma_bag2 - T);
 	
-	derivs[6] = (bag2.K_SR/bag2.M) * ( term1 + term2 
-	          + bag2.M*Lpp + Gamma_bag2 - T );
+	derivs[6] = val;// smoothBag2SecondDeriv(s, val) * 0.001;
 			
 	// afferent potential for bag2 (equation 8 except G product)
 	double APbag2;
@@ -345,8 +358,10 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 		  * (L - chain.L_0SR - (T/chain.K_SR) - chain.R);	
 	term2 = chain.K_PR*(L - chain.L_0SR - (T/chain.K_SR) - chain.L_0PR);
 	
-	derivs[7] = (chain.K_SR/chain.M) * ( term1 + term2 
-	          + chain.M*Lpp + Gamma_chain - T );
+	val = (chain.K_SR / chain.M) * (term1 + term2
+		+ chain.M * Lpp + Gamma_chain - T);
+
+	derivs[7] = val;//smoothChainSecondDeriv(s, val) * 0.001;
 			  
 	// afferent potential for chain (equation 8 except G product)
 	double APchain;
@@ -364,7 +379,8 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	// calculating the afferent firing
 	double primary, secondary, pri_stat;
 	pri_stat = bag2.G_pri*APbag2 + chain.G_pri*APchain;
-	primary = max(max(APbag1, pri_stat) + S * min(APbag1, pri_stat), 0.0);
+	//primary = max(max(APbag1, pri_stat) + S * min(APbag1, pri_stat), 0.0);
+	primary = max(APbag1 + (S * pri_stat), 0.0);
 	secondary = max(bag2.G_sec*APbag2 + chain.G_sec*APchain, 0.0);
 	
 	// cache the output so it can be accessed
@@ -385,6 +401,169 @@ void Mileusnic06Spindle::computeStateVariableDerivatives(const SimTK::State& s) 
 	setStateVariableDerivativeValue(s, STATE_tension_bag2_deriv_NAME, derivs[6]);
 	setStateVariableDerivativeValue(s, STATE_tension_chain_deriv_NAME, derivs[7]);
 }
+
+double Mileusnic06Spindle::
+smoothBag1SecondDeriv(const SimTK::State& s, double curr_val) const
+{
+	double curr_time = s.getTime();
+	double curr_vel = std::isnan(curr_val) ? 0.0 : curr_val;
+	const unsigned int smooth_window = SPINDLE_SMOOTHING_WINDOW;
+	double v, vs[smooth_window];
+	v = 0.0;
+	for (unsigned int i = 0; i < smooth_window; i++)
+		vs[i] = 0.0;
+
+	if (bag1_approx_ts[smooth_window - 2] - bag1_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - bag1_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - bag1_approx_lens(0)) / (curr_time - bag1_approx_ts(0));
+			v += vs[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				vs[i] = (bag1_approx_lens(i - 1) - bag1_approx_lens(i)) / (bag1_approx_ts(i - 1) - bag1_approx_ts(i));
+				v += vs[i];
+			}
+
+			v /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				bag1_approx_ts[i] = bag1_approx_ts[i - 1];
+				bag1_approx_lens[i] = bag1_approx_lens[i - 1];
+			}
+			bag1_approx_ts[0] = curr_time;
+			bag1_approx_lens[0] = curr_vel;
+		}
+		else {
+			v = 0.0;
+		}
+	}
+	else {
+		if (curr_time - bag1_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - bag1_approx_lens(0)) / (curr_time - bag1_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				bag1_approx_ts[i] = bag1_approx_ts[i - 1];
+				bag1_approx_lens[i] = bag1_approx_lens[i - 1];
+			}
+			bag1_approx_ts[0] = curr_time;
+			bag1_approx_lens[0] = curr_vel;
+
+			v = vs[0];
+		}
+		else {
+			v = 0.0;
+		}
+	}
+
+	return v;
+}
+
+double Mileusnic06Spindle::
+smoothBag2SecondDeriv(const SimTK::State& s, double curr_val) const
+{
+	double curr_time = s.getTime();
+	double curr_vel = std::isnan(curr_val) ? 0.0 : curr_val;
+	const unsigned int smooth_window = SPINDLE_SMOOTHING_WINDOW;
+	double v, vs[smooth_window];
+	v = 0.0;
+	for (unsigned int i = 0; i < smooth_window; i++)
+		vs[i] = 0.0;
+
+	if (bag2_approx_ts[smooth_window - 2] - bag2_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - bag2_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - bag2_approx_lens(0)) / (curr_time - bag2_approx_ts(0));
+			v += vs[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				vs[i] = (bag2_approx_lens(i - 1) - bag2_approx_lens(i)) / (bag2_approx_ts(i - 1) - bag2_approx_ts(i));
+				v += vs[i];
+			}
+
+			v /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				bag2_approx_ts[i] = bag2_approx_ts[i - 1];
+				bag2_approx_lens[i] = bag2_approx_lens[i - 1];
+			}
+			bag2_approx_ts[0] = curr_time;
+			bag2_approx_lens[0] = curr_vel;
+		}
+		else {
+			v = 0.0;
+		}
+	}
+	else {
+		if (curr_time - bag2_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - bag2_approx_lens(0)) / (curr_time - bag2_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				bag2_approx_ts[i] = bag2_approx_ts[i - 1];
+				bag2_approx_lens[i] = bag2_approx_lens[i - 1];
+			}
+			bag2_approx_ts[0] = curr_time;
+			bag2_approx_lens[0] = curr_vel;
+
+			v = vs[0];
+		}
+		else {
+			v = 0.0;
+		}
+	}
+
+	return v;
+}
+
+double Mileusnic06Spindle::
+smoothChainSecondDeriv(const SimTK::State& s, double curr_val) const
+{
+	double curr_time = s.getTime();
+	double curr_vel = std::isnan(curr_val) ? 0.0 : curr_val;
+	const unsigned int smooth_window = SPINDLE_SMOOTHING_WINDOW;
+	double v, vs[smooth_window];
+	v = 0.0;
+	for (unsigned int i = 0; i < smooth_window; i++)
+		vs[i] = 0.0;
+
+	if (chain_approx_ts[smooth_window - 2] - chain_approx_ts[smooth_window - 1] > 0) {
+		if (curr_time - chain_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - chain_approx_lens(0)) / (curr_time - chain_approx_ts(0));
+			v += vs[0];
+			for (unsigned int i = 1; i < smooth_window; i++) {
+				vs[i] = (chain_approx_lens(i - 1) - chain_approx_lens(i)) / (chain_approx_ts(i - 1) - chain_approx_ts(i));
+				v += vs[i];
+			}
+
+			v /= (double)smooth_window;
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				chain_approx_ts[i] = chain_approx_ts[i - 1];
+				chain_approx_lens[i] = chain_approx_lens[i - 1];
+			}
+			chain_approx_ts[0] = curr_time;
+			chain_approx_lens[0] = curr_vel;
+		}
+		else {
+			v = 0.0;
+		}
+	}
+	else {
+		if (curr_time - chain_approx_ts(0) > 0.0) {
+			vs[0] = (curr_vel - chain_approx_lens(0)) / (curr_time - chain_approx_ts(0));
+
+			for (unsigned int i = smooth_window - 1; i > 0; i--) {
+				chain_approx_ts[i] = chain_approx_ts[i - 1];
+				chain_approx_lens[i] = chain_approx_lens[i - 1];
+			}
+			chain_approx_ts[0] = curr_time;
+			chain_approx_lens[0] = curr_vel;
+
+			v = vs[0];
+		}
+		else {
+			v = curr_vel;
+		}
+	}
+
+	return v;
+}
+
 
 //--------------------------------------------------------------------------
 // Method to set the initial conditions
@@ -483,6 +662,15 @@ computeInitialSpindleEquilibrium(SimTK::State& s) const
 	dTb1 = bag1.K_SR * (Lp - dLPRb1);
 	dTb2 = bag2.K_SR * (Lp - dLPRb2);
 	dTc = chain.K_SR * (Lp - dLPRc);
+
+	for (unsigned int i = 0; i < SPINDLE_SMOOTHING_WINDOW; i++) {
+		bag1_approx_lens[i] = dTb1;
+		bag1_approx_ts[i] = 0.0;
+		bag2_approx_lens[i] = dTb2;
+		bag2_approx_ts[i] = 0.0;
+		chain_approx_lens[i] = dTc;
+		chain_approx_ts[i] = 0.0;
+	}
 	
 	// set values
 	setTensionBag1(s, Tb1);

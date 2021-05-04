@@ -53,8 +53,8 @@ namespace OpenSim {
 		for (int i = 0; i < getActuatorSet().getSize(); i++) {
 			SimTK::Vector actControls(3, 0.0);
 			actControls[0] = _outputs[sim->getIndexOfOutputNode(alpha_mapping[i])] / 50.0;
-			actControls[1] = _outputs[sim->getIndexOfOutputNode(beta_mapping[i])];
-			actControls[2] = _outputs[sim->getIndexOfOutputNode(gamma_mapping[i])];
+			actControls[1] = _outputs[sim->getIndexOfOutputNode(gamma_mapping[i])];
+			actControls[2] = _outputs[sim->getIndexOfOutputNode(beta_mapping[i])];
 			getActuatorSet()[i].addInControls(actControls, controls);
 		}
 	}
