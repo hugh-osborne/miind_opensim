@@ -10,6 +10,9 @@ bool skeletal_model_viz = true;
 double sim_length = 1.0;
 double timestep = 0.0002;
 
+Arrow *forceArrow;
+JointReaction* jr;
+
 Millard12EqMuscleWithAfferents* biceps_long;
 Millard12EqMuscleWithAfferents* triceps_long;
 Millard12EqMuscleWithAfferents* triceps_med;
@@ -60,6 +63,8 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
 
     double time = 0;
 
+    jr->begin(ts.getState());
+
     while (time < finalTime) {
         time += timestep;
         update_vis_counter++;
@@ -70,15 +75,15 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
 
         std::vector<double> input_rates;
 
-        input_rates.push_back(100000 + (biceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
+        input_rates.push_back(130000 + (biceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
         input_rates.push_back(0);
-        input_rates.push_back(100000);
+        input_rates.push_back(230000);
 
-        input_rates.push_back(100000 + (triceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
+        input_rates.push_back(130000 + (triceps_long->getSpindle()->getIaOutput(ts.getState()) * 300));
         input_rates.push_back(0); 
-        input_rates.push_back(100000);
+        input_rates.push_back(230000);
 
-        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        biceps_afferents[0]->setValue(biceps_long->getSpindle()->getIaOutput(ts.getState())*0);
         biceps_afferents[1]->setValue(biceps_long->getGTO()->getGTOout(ts.getState())*0);
         biceps_afferents[2]->setValue(biceps_long->getSpindle()->getIIOutput(ts.getState())*0);
 
@@ -86,7 +91,7 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
         biceps_long_activation[1]->setValue(input_rates[1]);
         biceps_long_activation[2]->setValue(input_rates[2]);
 
-        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*200);
+        triceps_long_afferents[0]->setValue(triceps_long->getSpindle()->getIaOutput(ts.getState())*0);
         triceps_long_afferents[1]->setValue(triceps_long->getGTO()->getGTOout(ts.getState())*0);
         triceps_long_afferents[2]->setValue(triceps_long->getSpindle()->getIIOutput(ts.getState())*0);
 
@@ -98,7 +103,11 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
             update_vis_counter = 0;
             model.getVisualizer().show(ts.getState());
         }   
+
+        jr->step(ts.getState(), 1);
     }
+
+    jr->end(ts.getState());
     return states;
 }
 
@@ -113,7 +122,7 @@ void setElbowExtensionPosture(Model& model){
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
-    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(0.998132); // 0.698132 = 40 degrees in radians
+    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(1.398132); // 0.698132 = 40 degrees in radians
 
     model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);
@@ -275,6 +284,28 @@ int main() {
 
     model.addController(brain);
 
+    // Reaction Forces on Wrist
+
+    jr = new JointReaction(&model);
+
+    Array<std::string> joints;
+    joints.append("wrist_hand");
+
+    Array<std::string> on_body;
+    on_body.append("child");
+
+    Array<std::string> in_frame;
+    in_frame.append("ground");
+
+    jr->setJointNames(joints);
+    jr->setOnBody(on_body);
+    jr->setInFrame(in_frame);
+
+    model.addAnalysis(jr);
+
+    //forceArrow = new Arrow(Vec3(0.0, 0.0, 0.0), UnitVec3(0.0, 1.0, 0.0), 3.0);
+    //model.updBodySet().get("");
+
     SimTK::State& state = model.initSystem();
 
 
@@ -290,6 +321,8 @@ int main() {
 
     // // Simulate.
     my_simulate(model, state, sim_length);
+
+    jr->printResults("jointreaction");
 
     auto table = table_reporter->getTable();
 
