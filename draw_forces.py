@@ -8,20 +8,29 @@ import csv
 
 with open("jointreaction_Un-named analysis._ReactionLoads.sto") as jrfile:
 
-    reader = csv.reader(jrfile, delimiter=',', quotechar='|')
+    reader = csv.reader(jrfile, delimiter='\t', quotechar='|')
     i=0
-    forces = []
+    
+    hand_mass = 0.5819
+    gravity = 9.80665
+    
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(111, projection='3d')
+    alph = 0.1
+    next_time = 0
     for row in reader:
-        if i == 15:
-            forces.append(row)
+        if i > 15 and float(row[0]) > next_time:
+            next_time += 0.01
+            start_index = 1
+            print(float(row[start_index])/hand_mass ,(float(row[start_index+1])/hand_mass)-gravity,float(row[start_index+2])/hand_mass)
+            ax.quiver(0.0, 0.0 ,0.0, float(row[start_index])/hand_mass ,(float(row[start_index+2])/hand_mass),(float(row[start_index+1])/hand_mass)-gravity, color = 'red', alpha = alph, lw = 2, arrow_length_ratio = 0.01, normalize=False)
+            alph += 0.001
+            
         i += 1
 
-    fig = plt.figure(figsize=(15,15))
-    ax = fig.add_subplot(111, projection='3d')
-
-    print(float(forces[0][1]) ,float(forces[0][2]),float(forces[0][3]))
-    ax.quiver(0.0, 0.0 ,0.0, float(forces[0][1]) ,float(forces[0][2]),float(forces[0][3]), color = 'red', alpha = .8, lw = 3)
-
+    ax.set_xlim3d(-1.0,1.0)
+    ax.set_ylim3d(-1.0,1.0)
+    ax.set_zlim3d(-1.0,1.0)
     plt.title('force')
 
     plt.draw()

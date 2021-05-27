@@ -7,11 +7,15 @@ using namespace SimTK;
 using namespace OpenSim;
 
 bool skeletal_model_viz = true;
-double sim_length = 1.0;
+double sim_length = 0.5;
 double timestep = 0.0002;
 
 Arrow *forceArrow;
 JointReaction* jr;
+ForceReporter* force_reporter;
+
+CustomJoint* wrist_hand;
+OpenSim::Body* radius;
 
 Millard12EqMuscleWithAfferents* biceps_long;
 Millard12EqMuscleWithAfferents* triceps_long;
@@ -64,6 +68,7 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
     double time = 0;
 
     jr->begin(ts.getState());
+    force_reporter->begin(ts.getState());
 
     while (time < finalTime) {
         time += timestep;
@@ -105,9 +110,15 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
         }   
 
         jr->step(ts.getState(), 1);
+        force_reporter->step(ts.getState(), 1);
+
+       // auto vec = wrist_hand->calcReactionOnChildExpressedInGround(ts.getState());
+       // std::cout << vec[0][0] << " " << vec[0][1] << " " << vec[0][2] << " " << vec[1][0] << " " << vec[1][1] << " " << vec[1][2] << " " << "\n";
+
     }
 
     jr->end(ts.getState());
+    force_reporter->end(ts.getState());
     return states;
 }
 
@@ -122,7 +133,7 @@ void setElbowExtensionPosture(Model& model){
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
-    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(1.398132); // 0.698132 = 40 degrees in radians
+    model.updCoordinateSet().get("elbow_flexion").setDefaultValue(1.698132); // 0.698132 = 40 degrees in radians
 
     model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);
@@ -151,6 +162,10 @@ int main() {
 
     triceps_long = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("TRIlong");
     triceps_long->setupAfferents();
+
+    wrist_hand = (CustomJoint*)&model.updJointSet().get("wrist_hand");
+
+    radius = (OpenSim::Body*)&model.updBodySet().get("radius");
 
     /*triceps_med = (Millard12EqMuscleWithAfferents*)&model.updMuscles().get("TRImed");
     triceps_med->setupAfferents();
@@ -210,7 +225,11 @@ int main() {
     table_reporter->addToReport(biceps_long->getOutput("lpf_velocity"));
     table_reporter->addToReport(biceps_long->getOutput("lpf_acceleration"));
     model.addComponent(table_reporter);
-    
+
+    force_reporter = new ForceReporter();
+    force_reporter->setModel(model);
+    model.addAnalysis(force_reporter);
+
     NeuralController* brain = new NeuralController("arm.mmxml");
     //brain->setActuators(model.updActuators());
     brain->addActuator(*biceps_long);
@@ -303,9 +322,6 @@ int main() {
 
     model.addAnalysis(jr);
 
-    //forceArrow = new Arrow(Vec3(0.0, 0.0, 0.0), UnitVec3(0.0, 1.0, 0.0), 3.0);
-    //model.updBodySet().get("");
-
     SimTK::State& state = model.initSystem();
 
 
@@ -323,6 +339,7 @@ int main() {
     my_simulate(model, state, sim_length);
 
     jr->printResults("jointreaction");
+    force_reporter->printResults("forces");
 
     auto table = table_reporter->getTable();
 
