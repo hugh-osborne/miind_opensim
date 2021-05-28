@@ -23,6 +23,62 @@
     <Node algorithm="LIF" name="TRIlongA" type="NEUTRAL" />
     <Node algorithm="LIF" name="TRIlongB" type="NEUTRAL" />
     <Node algorithm="LIF" name="TRIlongG" type="NEUTRAL" />
+
+   <Node algorithm="LIF" name="DELTantIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTantIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTantIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="DELTantRenshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTantA" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTantB" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTantG" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="DELTmedIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTmedIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTmedIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="DELTmedRenshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTmedA" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTmedB" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTmedG" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="DELTpostIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTpostIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTpostIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="DELTpostRenshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="DELTpostA" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTpostB" type="NEUTRAL" />
+    <Node algorithm="LIF" name="DELTpostG" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="PECm2IAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="PECm2IBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="PECm2IIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="PECm2Renshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="PECm2A" type="NEUTRAL" />
+    <Node algorithm="LIF" name="PECm2B" type="NEUTRAL" />
+    <Node algorithm="LIF" name="PECm2G" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="LATm2IAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="LATm2IBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="LATm2IIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="LATm2Renshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="LATm2A" type="NEUTRAL" />
+    <Node algorithm="LIF" name="LATm2B" type="NEUTRAL" />
+    <Node algorithm="LIF" name="LATm2G" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="FCRIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="FCRIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="FCRIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="FCRRenshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="FCRA" type="NEUTRAL" />
+    <Node algorithm="LIF" name="FCRB" type="NEUTRAL" />
+    <Node algorithm="LIF" name="FCRG" type="NEUTRAL" />
+
+    <Node algorithm="LIF" name="ECRLIAInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="ECRLIBInt" type="INHIBITORY" />
+    <Node algorithm="LIF" name="ECRLIIInt" type="EXCITATORY" />
+    <Node algorithm="LIF" name="ECRLRenshaw" type="INHIBITORY" />
+    <Node algorithm="LIF" name="ECRLA" type="NEUTRAL" />
+    <Node algorithm="LIF" name="ECRLB" type="NEUTRAL" />
+    <Node algorithm="LIF" name="ECRLG" type="NEUTRAL" />
   </Nodes>
   <Connections>
     <IncomingConnection Node="BIClongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
@@ -35,20 +91,6 @@
     <IncomingConnection Node="BIClongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="BIClongG"/>
 
-    <!--<Connection In="BIClongIIInt" Out="BIClongA" num_connections="50" efficacy="0.1" delay="0.0"/>
-    <Connection In="TRIlongIIInt" Out="TRIlongA" num_connections="50" efficacy="0.1" delay="0.0"/>-->
-
-    <!--<Connection In="BIClongIBInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
-    <Connection In="TRIlongIBInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
-    
-    <!--<Connection In="TRIlongIAInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
-    <Connection In="TRIlongIAInt" Out="BIClongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>
-    <Connection In="BIClongIAInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
-    <Connection In="BIClongIAInt" Out="TRIlongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
-
-    <!--<Connection In="TRIlongRenshaw" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
-    <Connection In="BIClongRenshaw" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
-
     <IncomingConnection Node="TRIlongIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <IncomingConnection Node="TRIlongIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <IncomingConnection Node="TRIlongIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
@@ -58,10 +100,94 @@
     <OutgoingConnection Node="TRIlongB"/>
     <IncomingConnection Node="TRIlongG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
     <OutgoingConnection Node="TRIlongG"/>
+
+    <IncomingConnection Node="DELTantIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTantIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTantIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTantA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTantA"/>
+    <IncomingConnection Node="DELTantB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTantB"/>
+    <IncomingConnection Node="DELTantG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTantG"/>
+
+    <IncomingConnection Node="DELTmedIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTmedIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTmedIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTmedA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTmedA"/>
+    <IncomingConnection Node="DELTmedB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTmedB"/>
+    <IncomingConnection Node="DELTmedG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTmedG"/>
+
+    <IncomingConnection Node="DELTpostIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTpostIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTpostIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="DELTpostA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTpostA"/>
+    <IncomingConnection Node="DELTpostB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTpostB"/>
+    <IncomingConnection Node="DELTpostG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="DELTpostG"/>
+
+    <IncomingConnection Node="PECm2IAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="PECm2IBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="PECm2IIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="PECm2A" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="PECm2A"/>
+    <IncomingConnection Node="PECm2B" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="PECm2B"/>
+    <IncomingConnection Node="PECm2G" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="PECm2G"/>
+
+    <IncomingConnection Node="LATm2IAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="LATm2IBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="LATm2IIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="LATm2A" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="LATm2A"/>
+    <IncomingConnection Node="LATm2B" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="LATm2B"/>
+    <IncomingConnection Node="LATm2G" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="LATm2G"/>
+
+    <IncomingConnection Node="FCRIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="FCRIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="FCRIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="FCRA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="FCRA"/>
+    <IncomingConnection Node="FCRB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="FCRB"/>
+    <IncomingConnection Node="FCRG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="FCRG"/>
+
+    <IncomingConnection Node="ECRLIAInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="ECRLIBInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="ECRLIIInt" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <IncomingConnection Node="ECRLA" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="ECRLA"/>
+    <IncomingConnection Node="ECRLB" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="ECRLB"/>
+    <IncomingConnection Node="ECRLG" num_connections="0.1" efficacy="0.1" delay="0.0"/>
+    <OutgoingConnection Node="ECRLG"/>
+
+    <!--<Connection In="BIClongIIInt" Out="BIClongA" num_connections="50" efficacy="0.1" delay="0.0"/>
+    <Connection In="TRIlongIIInt" Out="TRIlongA" num_connections="50" efficacy="0.1" delay="0.0"/>-->
+
+    <!--<Connection In="BIClongIBInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="TRIlongIBInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
+
+    <!--<Connection In="TRIlongIAInt" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="TRIlongIAInt" Out="BIClongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongIAInt" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongIAInt" Out="TRIlongIAInt" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
+
+    <!--<Connection In="TRIlongRenshaw" Out="TRIlongA" num_connections="50" efficacy="-0.1" delay="0.0"/>
+    <Connection In="BIClongRenshaw" Out="BIClongA" num_connections="50" efficacy="-0.1" delay="0.0"/>-->
   </Connections>
   <Reporting>
-    <Display node="BIClongA" />
-    <Display node="TRIlongA" />
+    <!--<Display node="BIClongA" />
+    <Display node="TRIlongA" />-->
   </Reporting>
   <SimulationRunParameter>
     <master_steps>10</master_steps>

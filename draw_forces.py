@@ -11,7 +11,7 @@ with open("jointreaction_Un-named analysis._ReactionLoads.sto") as jrfile:
     reader = csv.reader(jrfile, delimiter='\t', quotechar='|')
     i=0
     
-    hand_mass = 0.5819
+    hand_mass = 1.0
     gravity = 9.80665
     
     fig = plt.figure(figsize=(8,8))
@@ -24,13 +24,16 @@ with open("jointreaction_Un-named analysis._ReactionLoads.sto") as jrfile:
             start_index = 1
             print(float(row[start_index])/hand_mass ,(float(row[start_index+1])/hand_mass)-gravity,float(row[start_index+2])/hand_mass)
             ax.quiver(0.0, 0.0 ,0.0, float(row[start_index])/hand_mass ,(float(row[start_index+2])/hand_mass),(float(row[start_index+1])/hand_mass)-gravity, color = 'red', alpha = alph, lw = 2, arrow_length_ratio = 0.01, normalize=False)
-            alph += 0.001
+            alph += 0.01
             
         i += 1
 
     ax.set_xlim3d(-1.0,1.0)
+    ax.set_xlabel("Forward/Backward")
     ax.set_ylim3d(-1.0,1.0)
+    ax.set_ylabel("Left/Right")
     ax.set_zlim3d(-1.0,1.0)
+    ax.set_zlabel("Up/Down")
     plt.title('force')
 
     plt.draw()

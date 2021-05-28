@@ -4598,6 +4598,149 @@
 						<groups />
 					</WrapObjectSet>
 				</Body>
+
+        <Body name="anchor_point">
+          <mass>1.0</mass>
+          <mass_center> 0.0 0.0 0.0</mass_center>
+          <inertia_xx>0.00024259</inertia_xx>
+          <inertia_yy>0.00025526</inertia_yy>
+          <inertia_zz>4.442e-005</inertia_zz>
+          <inertia_xy>-1.898e-005</inertia_xy>
+          <inertia_xz>-6.994e-005</inertia_xz>
+          <inertia_yz>5.371e-005</inertia_yz>
+          <!--Joint that connects this body with the parent body.-->
+          <Joint>
+            <CustomJoint name="anchor_joint">
+              <!--Name of the parent body to which this joint connects its owner body.-->
+              <parent_body>hand</parent_body>
+              <!--Location of the joint in the parent body specified in the parent reference frame. Default is (0,0,0).-->
+              <location_in_parent>0 0 0</location_in_parent>
+              <!--Orientation of the joint in the parent body specified in the parent reference frame. Euler XYZ body-fixed rotation angles are used to express the orientation. Default is (0,0,0).-->
+              <orientation_in_parent>0 0 0</orientation_in_parent>
+              <!--Location of the joint in the child body specified in the child reference frame. For SIMM models, this vector is always the zero vector (i.e., the body reference frame coincides with the joint). -->
+              <location>0 0 0</location>
+              <!--Orientation of the joint in the owing body specified in the owning body reference frame.  Euler XYZ body-fixed rotation angles are used to express the orientation. -->
+              <orientation>0 0 0</orientation>
+              <!--Set holding the generalized coordinates (q's) that parmeterize this joint.-->
+              <!--Whether the joint transform defines parent->child or child->parent.-->
+              <reverse>false</reverse>
+              <!--Defines how the child body moves with respect to the parent as a function of the generalized coordinates.-->
+              <SpatialTransform>
+                <!--3 Axes for rotations are listed first.-->
+                <TransformAxis name="rotation1">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates>anchor_joint_r2</coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>1 0 0</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <LinearFunction>
+                      <coefficients> 1 0</coefficients>
+                    </LinearFunction>
+                  </function>
+                </TransformAxis>
+                <TransformAxis name="rotation2">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates>anchor_joint_r3</coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>0 1 0</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <LinearFunction>
+                      <coefficients> 1 0</coefficients>
+                    </LinearFunction>
+                  </function>
+                </TransformAxis>
+                <TransformAxis name="rotation3">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates></coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>0 0 1</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <Constant>
+                      <value>0</value>
+                    </Constant>
+                  </function>
+                </TransformAxis>
+                <!--3 Axes for translations are listed next.-->
+                <TransformAxis name="translation1">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates></coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>1 0 0</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <Constant>
+                      <value>0</value>
+                    </Constant>
+                  </function>
+                </TransformAxis>
+                <TransformAxis name="translation2">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates></coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>0 1 0</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <Constant>
+                      <value>0</value>
+                    </Constant>
+                  </function>
+                </TransformAxis>
+                <TransformAxis name="translation3">
+                  <!--Names of the coordinates that serve as the independent variables         of the transform function.-->
+                  <coordinates></coordinates>
+                  <!--Rotation or translation axis for the transform.-->
+                  <axis>0 0 1</axis>
+                  <!--Transform function of the generalized coordinates used to        represent the amount of transformation along a specified axis.-->
+                  <function>
+                    <Constant>
+                      <value>0</value>
+                    </Constant>
+                  </function>
+                </TransformAxis>
+              </SpatialTransform>
+            </CustomJoint>
+          </Joint>
+          <VisibleObject>
+            <!--Set of geometry files and associated attributes, allow .vtp, .stl, .obj-->
+            <GeometrySet>
+              <objects>
+                <DisplayGeometry>
+                  <!--Name of geometry file .vtp, .stl, .obj-->
+                  <geometry_file>sphere.vtp</geometry_file>
+                  <!--Color used to display the geometry when visible-->
+                  <color> 0 1 0</color>
+                  <!--Name of texture file .jpg, .bmp-->
+                  <texture_file />
+                  <!--in body transform specified as 3 rotations (rad) followed by 3 translations rX rY rZ tx ty tz-->
+                  <transform> 0 0 0 0 0 0</transform>
+                  <!--Three scale factors for display purposes: scaleX scaleY scaleZ-->
+                  <scale_factors> 0.03 0.03 0.03</scale_factors>
+                  <!--Display Pref. 0:Hide 1:Wire 3:Flat 4:Shaded-->
+                  <display_preference>4</display_preference>
+                  <!--Display opacity between 0.0 and 1.0-->
+                  <opacity>1</opacity>
+                </DisplayGeometry>
+              </objects>
+              <groups />
+            </GeometrySet>
+            <!--Three scale factors for display purposes: scaleX scaleY scaleZ-->
+            <scale_factors> 1 1 1</scale_factors>
+            <!--transform relative to owner specified as 3 rotations (rad) followed by 3 translations rX rY rZ tx ty tz-->
+            <transform> 0 0 0 0 0 0</transform>
+            <!--Whether to show a coordinate frame-->
+            <show_axes>false</show_axes>
+            <!--Display Pref. 0:Hide 1:Wire 3:Flat 4:Shaded Can be overriden for individual geometries-->
+            <display_preference>0</display_preference>
+          </VisibleObject>
+          <WrapObjectSet>
+            <objects />
+            <groups />
+          </WrapObjectSet>
+        </Body>
+        
 			</objects>
 			<groups />
 		</BodySet>
