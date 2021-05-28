@@ -11,7 +11,7 @@ with open("jointreaction_Un-named analysis._ReactionLoads.sto") as jrfile:
     reader = csv.reader(jrfile, delimiter='\t', quotechar='|')
     i=0
     
-    hand_mass = 1.0
+    hand_mass = 0.00001
     gravity = 9.80665
     
     fig = plt.figure(figsize=(8,8))

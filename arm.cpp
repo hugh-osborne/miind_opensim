@@ -263,49 +263,49 @@ StatesTrajectory my_simulate(const Model& model, const SimTK::State& initState, 
 
 void setElbowExtensionPosture(Model& model){
     
-    model.updCoordinateSet().get("sternoclavicular_r2").setDefaultLocked(true);
+    model.updCoordinateSet().get("sternoclavicular_r2").setDefaultLocked(false);
     model.updCoordinateSet().get("sternoclavicular_r2").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("sternoclavicular_r3").setDefaultLocked(true);
+    model.updCoordinateSet().get("sternoclavicular_r3").setDefaultLocked(false);
     model.updCoordinateSet().get("sternoclavicular_r3").setDefaultValue(0.0);
     
-    model.updCoordinateSet().get("unrotscap_r3").setDefaultLocked(true);
+    model.updCoordinateSet().get("unrotscap_r3").setDefaultLocked(false);
     model.updCoordinateSet().get("unrotscap_r3").setDefaultValue(0.0);
     
-    model.updCoordinateSet().get("unrotscap_r2").setDefaultLocked(true);
+    model.updCoordinateSet().get("unrotscap_r2").setDefaultLocked(false);
     model.updCoordinateSet().get("unrotscap_r2").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("acromioclavicular_r2").setDefaultLocked(true);
+    model.updCoordinateSet().get("acromioclavicular_r2").setDefaultLocked(false);
     model.updCoordinateSet().get("acromioclavicular_r2").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("acromioclavicular_r3").setDefaultLocked(true);
+    model.updCoordinateSet().get("acromioclavicular_r3").setDefaultLocked(false);
     model.updCoordinateSet().get("acromioclavicular_r3").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("acromioclavicular_r1").setDefaultLocked(true);
+    model.updCoordinateSet().get("acromioclavicular_r1").setDefaultLocked(false);
     model.updCoordinateSet().get("acromioclavicular_r1").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("unrothum_r1").setDefaultLocked(true);
+    model.updCoordinateSet().get("unrothum_r1").setDefaultLocked(false);
     model.updCoordinateSet().get("unrothum_r1").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("unrothum_r3").setDefaultLocked(true);
+    model.updCoordinateSet().get("unrothum_r3").setDefaultLocked(false);
     model.updCoordinateSet().get("unrothum_r3").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("unrothum_r2").setDefaultLocked(true);
+    model.updCoordinateSet().get("unrothum_r2").setDefaultLocked(false);
     model.updCoordinateSet().get("unrothum_r2").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("elv_angle").setDefaultLocked(true);
+    model.updCoordinateSet().get("elv_angle").setDefaultLocked(false);
     model.updCoordinateSet().get("elv_angle").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("shoulder_elv").setDefaultLocked(true);
+    model.updCoordinateSet().get("shoulder_elv").setDefaultLocked(false);
     model.updCoordinateSet().get("shoulder_elv").setDefaultValue(0.0);
 
-    model.updCoordinateSet().get("shoulder_rot").setDefaultLocked(true);
+    model.updCoordinateSet().get("shoulder_rot").setDefaultLocked(false);
     model.updCoordinateSet().get("shoulder_rot").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("elbow_flexion").setDefaultLocked(false);
     model.updCoordinateSet().get("elbow_flexion").setDefaultValue(1.698132); // 0.698132 = 40 degrees in radians
 
-    model.updCoordinateSet().get("pro_sup").setDefaultLocked(true);
+    model.updCoordinateSet().get("pro_sup").setDefaultLocked(false);
     model.updCoordinateSet().get("pro_sup").setDefaultValue(0.0);
 
     model.updCoordinateSet().get("deviation").setDefaultLocked(true);

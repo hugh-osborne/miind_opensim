@@ -4600,7 +4600,7 @@
 				</Body>
 
         <Body name="anchor_point">
-          <mass>1.0</mass>
+          <mass>0.00001</mass>
           <mass_center> 0.0 0.0 0.0</mass_center>
           <inertia_xx>0.00024259</inertia_xx>
           <inertia_yy>0.00025526</inertia_yy>
